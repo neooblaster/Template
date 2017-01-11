@@ -1,0 +1,444 @@
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                            --------------------------------------------------                        --- --
+-- ---                                { statistics.procedure.aggregate.tpl.mysql}                           --- --
+-- ---                            --------------------------------------------------                        --- --
+-- ---                                                                                                      --- --
+-- ---   AUTEUR       : Nicolas DUPRE                                                                       --- --
+-- ---                                                                                                      --- --
+-- ---   RELEASE      : 24.12.2016                                                                          --- --
+-- ---                                                                                                      --- --
+-- ---   APP_VERSION  : 1.3.2.0                                                                             --- --
+-- ---                                                                                                      --- --
+-- ---   FILE_VERSION : 1.0 NDU                                                                             --- --
+-- ---                                                                                                      --- --
+-- ---   CALLERS      : statistics.php                                                                      --- --
+-- ---                                                                                                      --- --
+-- ---                                                                                                      --- --
+-- ---                                           ---------------                                            --- --
+-- ---                                              CHANGELOG                                               --- --
+-- ---                                           ---------------                                            --- --
+-- ---                                                                                                      --- --
+-- ---   VERSION 1.0 : 24.12.2016 : NDU                                                                     --- --
+-- ---   ------------------------------                                                                     --- --
+-- ---      - Première release                                                                              --- --
+-- ---                                                                                                      --- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- --- Objectif du script :
+-- ------------------------
+-- 
+-- 
+-- 		Le but est de disposer dans un seul fichier, trois requêtes SQL jouées indépendament selon les besoins
+-- 	grâce à des variables pour le moteur Template.
+-- 	De cette maniere il est plus facile d'uniformiser les noms de variables SQL, ainsi que gérer le très grand nombre
+-- 	de paramètres de sortie de le procédure en accord avec PDO PHP
+-- 
+-- 
+-- 	Structure Conditionnelle IF : 
+-- 		<!-- IF (condition) AS block_name_1 -->
+-- 			your_code_if_true
+-- 		<!-- ENDIF block_name_1 -->
+-- 
+-- 	Structure Conditionnelle IF ELSE :
+-- 		<!-- IF (condition) AS block_name_2 -->
+-- 			your_code_if_true
+-- 		<!-- ELSE -->
+-- 			your_code_if_false
+-- 		<!-- ENDIF block_name_2 -->
+-- 
+-- 	Structure Conditionnelle IF ELSEIF ELSE : 
+-- 		<!-- IF (condition_1) AS block_name_3 -->
+-- 			your_code_if_cdn_1_true
+-- 		<-- ELSEIF (condition_2) -->
+-- 			your_code_if_cdn_2_true
+-- 		<!-- ELSE -->
+-- 			your_code_if_any_cdn_true
+-- 		<!-- ENDIF block_name_3 -->
+-- 
+-- 
+-- 	Si la variable composant la condition n'existe pas, un warning se produit lors de l'évaluation.
+-- 	Si les warnings sont muted, alors cela vaudra faux, ce qui permet de ne pas à avoir à toujours envoyer des données partiellement inutile
+-- 
+-- 
+-- 	Commande LINUX pour MINIFIER le fichier :: 
+-- 	-------------------------------------------
+-- 
+-- 		sed -r "s/\t//g;s/--\s.*//g" statistics.aggregator.tpl.mysql | sed ":l;N;s/\n/ /;s/  */ /g;tl" > statistics.aggregator.tpl.min.mysql
+-- 
+-- 
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                           REQUETE SQL POUR SUPPRIMER LA PROCEDURE AGGREGATE                          --- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- IF (%DROP_PROCEDURE%) AS DROP_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+DROP PROCEDURE AGGREGATE;
+
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- ENDIF DROP_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+/* TEST COMMENT BLOCK INLINE */
+
+/* 
+	TEST
+	COMMENT
+	MULTI
+	LINE
+*/
+
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                             REQUETE SQL POUR CREER LA PROCEDURE AGGREGATE                            --- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- IF (%CREATE_PROCEDURE%) AS CREATE_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+DELIMITER $$
+
+CREATE PROCEDURE `AGGREGATE` (
+	IN `SQL_CLAUSE` TEXT CHARSET utf8,
+ 	OUT `SCHEDULES_TOTAL` SMALLINT UNSIGNED,
+	OUT `SCHEDULES_SELECTED` SMALLINT UNSIGNED,
+	OUT `TASKS_TOTAL` MEDIUMINT UNSIGNED,
+	OUT `TASKS_SELECTED` MEDIUMINT UNSIGNED,
+	OUT `TASKS_DONE` MEDIUMINT UNSIGNED,
+	OUT `TASKS_UNDONE` MEDIUMINT UNSIGNED,
+	OUT `TASKS_ZENDONE` MEDIUMINT UNSIGNED,
+	OUT `TASKS_WELLDONE` MEDIUMINT UNSIGNED,
+	OUT `TASKS_BURNDONE` MEDIUMINT UNSIGNED,
+	OUT `SCHEDULES_TASKS_HIGHER_VALUE` MEDIUMINT UNSIGNED,
+	OUT `SCHEDULES_TASKS_LOWER_VALUE` MEDIUMINT UNSIGNED,
+	OUT `SCHEDULES_TASKS_AVERAGE` FLOAT(16,2) UNSIGNED,
+	OUT `SCHEDULES_WORKLOAD_HIGHER_VALUE` MEDIUMINT UNSIGNED,
+	OUT `SCHEDULES_WORKLOAD_LOWER_VALUE` MEDIUMINT UNSIGNED,
+	OUT `SCHEDULES_WORKLOAD_AVERAGE` FLOAT(16,2) UNSIGNED,
+	OUT `CUSTOMERS_TOTAL` MEDIUMINT UNSIGNED,
+	OUT `CUSTOMERS_SELECTED` MEDIUMINT UNSIGNED,
+	OUT `DOMAINS_TOTAL` MEDIUMINT UNSIGNED,
+	OUT `DOMAINS_SELECTED` MEDIUMINT UNSIGNED,
+	OUT `VALIDATORS_TOTAL` MEDIUMINT UNSIGNED,
+	OUT `VALIDATORS_SELECTED` MEDIUMINT UNSIGNED
+) NO SQL
+
+BEGIN
+	-- ---------------------------------------------------------------------------------------- --
+	--                                 Traitements préparatoirs                                 --
+	-- ---------------------------------------------------------------------------------------- --
+	IF SQL_CLAUSE = '' THEN 
+		SET @DONE_SQL_CLAUSE = 'WHERE DONE = 1'; 
+		SET @VALIDATORS_SQL_CLAUSE = 'WHERE DONE_BY IS NOT NULL';
+	ELSE 
+		SET @DONE_SQL_CLAUSE = CONCAT(SQL_CLAUSE, ' AND DONE = 1');
+		SET @VALIDATORS_SQL_CLAUSE = CONCAT(SQL_CLAUSE, ' AND DONE_BY IS NOT NULL');
+	END IF;
+	
+	-- ---------------------------------------------------------------------------------------- --
+	--                                  Aggregation des données                                 --
+	-- ---------------------------------------------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE PLANNING ENREGISTRES --- --
+	-- ------------------------------------------------- --
+	SELECT COUNT(DISTINCT SCHEDULE_TIME) INTO SCHEDULES_TOTAL FROM SCHEDULES;
+
+
+	-- -------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE PLANNING SELECTIONNES --- --
+	-- -------------------------------------------------- --
+	SET @COUNT_SCHEDULES_SELECTED = CONCAT('SELECT COUNT(DISTINCT SCHEDULE_TIME) INTO @SCHEDULES_SELECTED FROM SCHEDULES ', SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_SCHEDULES_SELECTED FROM @COUNT_SCHEDULES_SELECTED;
+	EXECUTE STMT_COUNT_SCHEDULES_SELECTED;
+	
+	SET SCHEDULES_SELECTED = @SCHEDULES_SELECTED;
+	
+	DEALLOCATE PREPARE STMT_COUNT_SCHEDULES_SELECTED;
+	
+	
+	-- ----------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTION ENREGITSREES --- --
+	-- ----------------------------------------------- --
+	SELECT COUNT(*) INTO TASKS_TOTAL FROM SCHEDULES;
+	
+	
+	-- ------------------------------------------------ --
+	-- --- COMPTER LE NOMBRE D'ACTION SELECTIONNEES --- --
+	-- ------------------------------------------------ --
+	SET @COUNT_TASKS_SELECTED = CONCAT('SELECT COUNT(*) INTO @TASKS_SELECTED FROM SCHEDULES ', SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_TASKS_SELECTED FROM @COUNT_TASKS_SELECTED;
+	EXECUTE STMT_COUNT_TASKS_SELECTED;
+	
+	SET TASKS_SELECTED = @TASKS_SELECTED;
+	
+	DEALLOCATE PREPARE STMT_COUNT_TASKS_SELECTED;
+	
+	
+	-- -------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTIONS VALIDEES --- --
+	-- -------------------------------------------- --
+	SET @COUNT_TASKS_DONE = CONCAT('SELECT COUNT(*) INTO @TASKS_DONE FROM SCHEDULES ', @DONE_SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_TASKS_DONE FROM @COUNT_TASKS_DONE;
+	EXECUTE STMT_COUNT_TASKS_DONE;
+	
+	SET TASKS_DONE = @TASKS_DONE;
+	SET TASKS_UNDONE = @TASKS_SELECTED - @TASKS_DONE;
+	
+	DEALLOCATE PREPARE STMT_COUNT_TASKS_DONE;
+	
+	
+	-- ---------------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTIONS VALIDEES EN AVANCE (1) --- --
+	-- ---------------------------------------------------------- --
+	SET @COUNT_TASKS_DONE_ZENDONE = CONCAT('SELECT COUNT(*) INTO @TASKS_ZENDONE FROM SCHEDULES ', @DONE_SQL_CLAUSE, ' AND DONE_LEVEL = 1');
+	
+	PREPARE STMT_COUNT_TASKS_DONE_ZENDONE FROM @COUNT_TASKS_DONE_ZENDONE;
+	EXECUTE STMT_COUNT_TASKS_DONE_ZENDONE;
+	
+	SET TASKS_ZENDONE = @TASKS_ZENDONE;
+	
+	DEALLOCATE PREPARE STMT_COUNT_TASKS_DONE_ZENDONE;
+	
+	
+	-- --------------------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTIONS VALIDEES DANS LES TEMPS (0) --- --
+	-- --------------------------------------------------------------- --
+	SET @COUNT_TASKS_DONE_WELLDONE = CONCAT('SELECT COUNT(*) INTO @TASKS_WELLDONE FROM SCHEDULES ', @DONE_SQL_CLAUSE, ' AND DONE_LEVEL = 0');
+	
+	PREPARE STMT_COUNT_TASKS_DONE_WELLDONE FROM @COUNT_TASKS_DONE_WELLDONE;
+	EXECUTE STMT_COUNT_TASKS_DONE_WELLDONE;
+	
+	SET TASKS_WELLDONE = @TASKS_WELLDONE;
+	
+	DEALLOCATE PREPARE STMT_COUNT_TASKS_DONE_WELLDONE;
+	
+	
+	-- ----------------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTIONS VALIDEES EN RETARD (-1) --- --
+	-- ----------------------------------------------------------- --
+	SET @COUNT_TASKS_DONE_BURNDONE = CONCAT('SELECT COUNT(*) INTO @TASKS_BURNDONE FROM SCHEDULES ', @DONE_SQL_CLAUSE, ' AND DONE_LEVEL = -1');
+	
+	PREPARE STMT_COUNT_TASKS_DONE_BURNDONE FROM @COUNT_TASKS_DONE_BURNDONE;
+	EXECUTE STMT_COUNT_TASKS_DONE_BURNDONE;
+	
+	SET TASKS_BURNDONE = @TASKS_BURNDONE;
+	
+	DEALLOCATE PREPARE STMT_COUNT_TASKS_DONE_BURNDONE;
+	
+	
+	-- --------------------------------------------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE D'ACTIONS MAXIMALE, MINIMALE ET MOYENNE D'ACTION PAR PLANNING --- --
+	-- --------------------------------------------------------------------------------------- --
+	SET @GET_TASKS_KEYS_DATA = CONCAT('SELECT MAX(TASKS), MIN(TASKS), AVG(TASKS) INTO @MAX_TASKS, @MIN_TASKS, @TASKS_AVERAGE FROM (SELECT COUNT(*) AS TASKS FROM SCHEDULES ', SQL_CLAUSE, ' GROUP BY SCHEDULE_TIME) AS GET_TASKS_KEY_DATA');
+	
+	PREPARE STMT_GET_TASKS_KEY_DATA FROM @GET_TASKS_KEYS_DATA;
+	EXECUTE STMT_GET_TASKS_KEY_DATA;
+	
+	SET SCHEDULES_TASKS_HIGHER_VALUE = @MAX_TASKS;
+	SET SCHEDULES_TASKS_LOWER_VALUE = @MIN_TASKS;
+	SET SCHEDULES_TASKS_AVERAGE = @TASKS_AVERAGE;
+	
+	DEALLOCATE PREPARE STMT_GET_TASKS_KEY_DATA;
+	
+	
+	-- --------------------------------------------------------------------------- --
+	-- --- COMPTER LA CHARGE MAXIMALE, MINIMALE ET CHARGE MOYENNE PAR PLANNING --- --
+	-- --------------------------------------------------------------------------- --
+	SET @GET_WORKLOAD_KEYS_DATA = CONCAT('SELECT MAX(WORKLOAD), MIN(WORKLOAD), AVG(WORKLOAD) INTO @MAX_WORKLOAD, @MIN_WORKLOAD, @WORKLOAD_AVERAGE FROM (SELECT SUM(WORKLOAD) AS WORKLOAD FROM SCHEDULES ', SQL_CLAUSE, ' GROUP BY SCHEDULE_TIME) AS GET_WORKLOAD_KEY_DATA');
+	 
+	PREPARE STMT_GET_WORKLOAD_KEY_DATA FROM @GET_WORKLOAD_KEYS_DATA;
+	EXECUTE STMT_GET_WORKLOAD_KEY_DATA;
+	
+	SET SCHEDULES_WORKLOAD_HIGHER_VALUE = @MAX_WORKLOAD;
+	SET SCHEDULES_WORKLOAD_LOWER_VALUE = @MIN_WORKLOAD;
+	SET SCHEDULES_WORKLOAD_AVERAGE = @WORKLOAD_AVERAGE;  
+	
+	DEALLOCATE PREPARE STMT_GET_WORKLOAD_KEY_DATA;
+	
+	
+	-- ----------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE CLIENT ENREGISTRES --- --
+	-- ----------------------------------------------- --
+	SELECT COUNT(DISTINCT CUSTOMER) INTO CUSTOMERS_TOTAL FROM SCHEDULES;
+	
+	
+	-- ------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE CLIENT SELECTIONNEES --- --
+	-- ------------------------------------------------- --
+	SET @COUNT_CUSTOMERS_SELECTED = CONCAT('SELECT COUNT(DISTINCT CUSTOMER) INTO @CUSTOMERS_SELECTED FROM SCHEDULES ', SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_CUSTOMERS_SELECTED FROM @COUNT_CUSTOMERS_SELECTED;
+	EXECUTE STMT_COUNT_CUSTOMERS_SELECTED;
+	
+	SET CUSTOMERS_SELECTED = @CUSTOMERS_SELECTED;
+	
+	DEALLOCATE PREPARE STMT_COUNT_CUSTOMERS_SELECTED;
+	
+	
+	-- ----------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE DOMAIN ENREGISTRES --- --
+	-- ----------------------------------------------- --
+	SELECT COUNT(DISTINCT DOMAIN) INTO DOMAINS_TOTAL FROM SCHEDULES;
+	
+	
+	-- ------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE DOMAIN SELECTIONNEES --- --
+	-- ------------------------------------------------- --
+	SET @COUNT_DOMAINS_SELECTED = CONCAT('SELECT COUNT(DISTINCT DOMAIN) INTO @DOMAINS_SELECTED FROM SCHEDULES ', SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_DOMAINS_SELECTED FROM @COUNT_DOMAINS_SELECTED;
+	EXECUTE STMT_COUNT_DOMAINS_SELECTED;
+	
+	SET DOMAINS_SELECTED = @DOMAINS_SELECTED;
+	
+	DEALLOCATE PREPARE STMT_COUNT_DOMAINS_SELECTED;
+	
+	
+	-- --------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE VALIDATEUR ENREGISTRES --- --
+	-- --------------------------------------------------- --
+	SELECT COUNT(DISTINCT DONE_BY) INTO VALIDATORS_TOTAL FROM SCHEDULES WHERE DONE_BY IS NOT NULL;
+	
+	
+	-- ----------------------------------------------------- --
+	-- --- COMPTER LE NOMBRE DE VALIDATEUR SELECTIONNEES --- --
+	-- ----------------------------------------------------- --
+	SET @COUNT_VALIDATORS_SELECTED = CONCAT('SELECT COUNT(DISTINCT DONE_BY) INTO @VALIDATORS_SELECTED FROM SCHEDULES ', @VALIDATORS_SQL_CLAUSE);
+	
+	PREPARE STMT_COUNT_VALIDATORS_SELECTED FROM @COUNT_VALIDATORS_SELECTED;
+	EXECUTE STMT_COUNT_VALIDATORS_SELECTED;
+	
+	SET VALIDATORS_SELECTED = @VALIDATORS_SELECTED;
+	
+	DEALLOCATE PREPARE STMT_COUNT_VALIDATORS_SELECTED;
+	
+	
+END $$
+
+DELIMITER ;
+
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- ENDIF CREATE_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                                REQUETE SQL POUR EXECUTER LA PROCEDURE                                --- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- IF (%CALL_PROCEDURE%) AS CALL_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+CALL AGGREGATE(
+	?, 
+	@SCHEDULES_TOTAL, @SCHEDULES_SELECTED,
+	@TASKS_TOTAL, @TASKS_SELECTED,
+	@TASKS_DONE, @TASKS_UNDONE,
+	@TASKS_ZENDONE, @TASKS_WELLDONE, @TASKS_BURNDONE,
+	@SCHEDULES_TASKS_HIGHER_VALUE, @SCHEDULES_TASKS_LOWER_VALUE, @SCHEDULES_TASKS_AVERAGE,
+	@SCHEDULES_WORKLOAD_HIGHER_VALUE, @SCHEDULES_WORKLOAD_LOWER_VALUE, @SCHEDULES_WORKLOAD_AVERAGE,
+	@CUSTOMERS_TOTAL, @CUSTOMERS_SELECTED,
+	@DOMAINS_TOTAL, @DOMAINS_SELECTED,
+	@VALIDATORS_TOTAL, @VALIDATORS_SELECTED
+);
+
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- ENDIF CALL_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+
+
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                           REQUETE SQL POUR ACQUERIR LES DONNEES CALCULEES                           	--- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- IF (%SELECT_PROCEDURE%) AS SELECT_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+SELECT 
+	@SCHEDULES_TOTAL AS SCHEDULES_TOTAL,
+	@SCHEDULES_SELECTED AS SCHEDULES_SELECTED,
+	@TASKS_TOTAL AS TASKS_TOTAL,
+	@TASKS_SELECTED AS TASKS_SELECTED,
+	@TASKS_DONE AS TASKS_DONE,
+	@TASKS_UNDONE AS TASKS_UNDONE,
+	@TASKS_ZENDONE AS TASKS_ZENDONE,
+	@TASKS_WELLDONE AS TASKS_WELLDONE,
+	@TASKS_BURNDONE AS TASKS_BURNDONE,
+	@SCHEDULES_TASKS_HIGHER_VALUE AS SCHEDULES_TASKS_HIGHER_VALUE,
+	@SCHEDULES_TASKS_LOWER_VALUE AS SCHEDULES_TASKS_LOWER_VALUE,
+	@SCHEDULES_TASKS_AVERAGE AS SCHEDULES_TASKS_AVERAGE,
+	@SCHEDULES_WORKLOAD_HIGHER_VALUE AS SCHEDULES_WORKLOAD_HIGHER_VALUE,
+	@SCHEDULES_WORKLOAD_LOWER_VALUE AS SCHEDULES_WORKLOAD_LOWER_VALUE,
+	@SCHEDULES_WORKLOAD_AVERAGE AS SCHEDULES_WORKLOAD_AVERAGE,
+	@CUSTOMERS_TOTAL AS DOMAINS_SELECTED,
+	@CUSTOMERS_SELECTED AS DOMAINS_SELECTED,
+	@DOMAINS_TOTAL AS DOMAINS_SELECTED,
+	@DOMAINS_SELECTED AS DOMAINS_SELECTED,
+	@VALIDATORS_TOTAL AS VALIDATORS_TOTAL,
+	@VALIDATORS_SELECTED AS VALIDATORS_SELECTED
+;
+
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- ENDIF SELECT_PROCEDURE_AGGREGATE -->
+-- ------------------------------------------------------------------------------------------------------------ --
+
+
+
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ---                                                                                                      --- --
+-- ---                      REQUETE SQL POUR RÉCUPÉRER LES DONNÉES GROUPÉES PAR DATE                      	--- --
+-- ---                                                                                                      --- --
+-- ------------------------------------------------------------------------------------------------------------ --
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- IF (%RETRIEVE_GROUPED_DATA%) AS RETRIEVE_GROUPED_DATA -->
+-- ------------------------------------------------------------------------------------------------------------ --
+-- voir si peux fonctionner aprés le call aggregate utilisé avec nextRowset
+-- ----------------------------------------------------------- --
+-- --- DATE DES JOURS AYANT LE MINIMUM ET MAXIMUM D'ACTION --- --
+-- ----------------------------------------------------------- --
+SELECT 
+	COUNT(*) AS TASKS, 
+	FROM_UNIXTIME(SCHEDULE_TIME, "%Y-%m-%d") AS TASKS_DATE 
+	
+FROM SCHEDULES %SQL_CLAUSE%
+
+GROUP BY SCHEDULE_TIME 
+
+HAVING TASKS IN (:MAX_TASKS, :MIN_TASKS);
+
+
+-- ---------------------------------------------------------- --
+-- --- DATE DES JOURS AYANT LA CHARGE MINIMAL ET MAXIMALE --- --
+-- ---------------------------------------------------------- --
+SELECT 
+	SUM(WORKLOAD) AS WORKLOAD, 
+	FROM_UNIXTIME(SCHEDULE_TIME, "%Y-%m-%d") AS WORKLOAD_DATE 
+	
+FROM SCHEDULES %SQL_CLAUSE%
+
+GROUP BY SCHEDULE_TIME 
+
+HAVING WORKLOAD IN (:MAX_WORKLOAD, :MIN_WORKLOAD);
+
+
+-- ------------------------------------------------------------------------------------------------------------ --
+<!-- ENDIF RETRIEVE_GROUPED_DATA -->
+-- ------------------------------------------------------------------------------------------------------------ --

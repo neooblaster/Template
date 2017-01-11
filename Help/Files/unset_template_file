@@ -1,0 +1,7 @@
+public
+boolean
+unset_template_file
+void
+This method desallocate the mode used for template source, here template file.
+The source data is also flushed. You will have to re-set template source.
+This method could be require to change source from file to text.

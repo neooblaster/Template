@@ -1,0 +1,6 @@
+public
+boolean
+unset_template_file
+Mixed $var;[,Mixed $var]
+This methode allows you to delete specified vars from variable stack store in the engine Template.
+You can specified variable names as String type of an Array of String value which represents variable names.

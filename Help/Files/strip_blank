@@ -1,0 +1,7 @@
+static
+String
+strip_blank
+String $text
+This method will remove all Cariage Return, Linefeed and tabulation and return a only one line of text.
+It's usefull to minify JSON String dedicated to the browser (client side).
+That will optimize the traffic brandwidth.

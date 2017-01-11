@@ -1,0 +1,6 @@
+public
+boolean
+xor_vars
+Mixed $var;[,Mixed $var]
+This method allows you to make a XOR operation on boolean value for specified variables.
+It's especially usefull to switch one var to "off" and another to "on".

@@ -1,0 +1,29 @@
+<!-- BEGIN_BLOCK A -->
+	#-------------------------#
+	|   CECI EST LE BLOCK_A   |
+	#-------------------------#
+	<!-- BEGIN_BLOCK B -->
+		#-------------------------#
+		|   CECI EST LE BLOCK_B   |
+		#-------------------------#
+		<!-- IF (%ALLOWED%) AS BKB_ALLOWED -->
+			#-------------------------------------------#
+			|   CECI EST LE BKB_ALLOWED::ALLOWED=TRUE   |
+			#-------------------------------------------#
+			<!-- BEGIN_PHP PHP_IF_ALLOWED -->
+				echo "#--------------------------------------#\n";
+				echo "|   CECI EST LE BLOCK_PHP_IF_ALLOWED   |\n";
+				echo "#--------------------------------------#\n";
+			<!-- END_PHP PHP_IF_ALLOWED -->
+		<!-- ELSE -->
+			#--------------------------------------------#
+			|   CECI EST LE BKB_ALLOWED::ALLOWED=FALSE   |
+			#--------------------------------------------#
+			<!-- BEGIN_PHP PHP_IF_NOT_ALLOWED -->
+				echo "#------------------------------------------#\n";
+				echo "|   CECI EST LE BLOCK_PHP_IF_NOT_ALLOWED   |\n";
+				echo "#------------------------------------------#\n";
+			<!-- END_PHP PHP_IF_NOT_ALLOWED -->
+		<!-- ENDIF BKB_ALLOWED -->
+	<!-- END_BLOCK B -->
+<!-- END_BLOCK A -->

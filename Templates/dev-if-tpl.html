@@ -1,0 +1,61 @@
+Developpement de block CDN
+
+
+Block CDN standalone
+
+---------------[ DEBUT BLOCK CDN ]---------------
+<!-- IF (%BOOL_TRUE%) AS NAME_01 -->
+// Traiter l'instruction
+// Evaluer l'insturction
+// Décision de rendu
+
+NAME_01 est vrai et je l'affiche
+
+<!-- INCLUDE_TEMPLATE (Templates/dev-tpl.html) -->
+
+---------------[ DEBUT BLOCK CDN2 ]---------------
+<!-- IF (%BOOL_TRUE_2%) AS CDN2 -->
+
+Text du block CDN 2
+
+<!-- ENDIF CDN2 -->
+---------------[  FIN  BLOCK CDN2 ]---------------
+
+<!-- BEGIN_PHP PHP_01 -->
+for($i=0; $i<3; $i++){
+	echo $i.PHP_EOL;
+}
+<!-- END_PHP PHP_01 -->
+
+<!-- BEGIN_BLOCK A -->
+BLOCK A
+<!-- END_BLOCK A -->
+
+
+<!-- ENDIF NAME_01 -->
+---------------[  FIN  BLOCK CDN ]---------------
+
+Suite du modèle, au dela du block conditionnel
+
+<!-- INCLUDE_TEMPLATE (Templates/dev-tpl.html) -->
+
+<!-- BEGIN_PHP PHP_02 -->
+for($i=0; $i<3; $i++){
+	echo $i.PHP_EOL;
+}
+<!-- END_PHP PHP_02 -->
+
+<!-- BEGIN_BLOCK B -->
+BLOCK B
+
+<!-- BEGIN_PHP PHP_03 -->
+for($i=0; $i<3; $i++){
+	echo $i.PHP_EOL;
+}
+<!-- END_PHP PHP_03 -->
+
+<!-- END_BLOCK B -->
+
+<!-- RE_USE_BLOCK A -->
+<!-- RE_USE_PHP A -->
+<!-- RE_USE_IF A -->

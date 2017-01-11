@@ -1,0 +1,7 @@
+static
+String
+cleanse_sql
+String $text;[,Boolean $strip_blank=false]
+This static method allows you to remove all SQL comments.
+SQL comments begin with "-- ".
+If $strip_blank is set to true, that will remove all Linefeed, Cariage Return and tabulation.

@@ -1,0 +1,167 @@
+/** ----------------------------------------------------------------------------------------------------------------------- **/
+/** ----------------------------------------------------------------------------------------------------------------------- **/
+/** ---																																						--- **/
+/** --- 												---------------------------------------													--- **/
+/** ---													{ config.application.params.json }														--- **/
+/** --- 												---------------------------------------													--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---		AUTEUR			: Nicolas DUPRE																										--- **/
+/** ---																																						--- **/
+/** ---		RELEASE			: 17.11.2016																											--- **/
+/** ---																																						--- **/
+/** ---		APP_VERSION		: 1.3.1.0																												--- **/
+/** ---																																						--- **/
+/** ---		FILE_VERSION	: 1.1 NDU																												--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** --- 														-----------------------------															--- **/
+/** --- 															 { C H A N G E L O G } 																--- **/
+/** --- 														-----------------------------															--- **/
+/** ---																																						--- **/
+/** ---		VERSION 1.1 : 17.11.2016																												--- **/
+/** ---		------------------------																												--- **/
+/** ---			- Ajout dun nouveau paramètre boolean :																						--- **/
+/** ---				SCHEDULES_ARCHIVER																												--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---		VERSION 1.0 : 08.08.2016																												--- **/
+/** ---		------------------------																												--- **/
+/** ---			- Première release																													--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---		Déclaration de structure de la chaine JSON :																						--- **/
+/** ---		--------------------------------------------																						--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---		Description fonctionnelle :																											--- **/
+/** ---		---------------------------																											--- **/
+/** ---																																						--- **/
+/** ---			APP_LOG_ERROR_PATTERN :																												--- **/
+/** ---				Paramètre fournis par ordre :																									--- **/
+/** ---					1$. Date																															--- **/
+/** ---					2$. Adresse IP																													--- **/
+/** ---					3$. Niveau de l'erreur																										--- **/
+/** ---					4$. Message d'erreur																											--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ---			MULTI_DATA_LIST_JOINNING_CHAR	:																									--- **/
+/** ---				Dans les listes de donnée XLS, la colomne effective (list_col_data) à pour donnée réelle DB  			--- **/
+/** ---				relative aux autre colomnes existante. 																					--- **/
+/** ---				Le séparateur sert à joindre - découper pour retrouver ce donnée DB reel										--- **/
+/** ---																																						--- **/
+/** ---																																						--- **/
+/** ----------------------------------------------------------------------------------------------------------------------- **/
+/** ----------------------------------------------------------------------------------------------------------------------- **/
+/**
+	FOR
+	MULTI
+	LINE
+	COMMENT
+**/
+{
+	/** [String] Chaine de caractère à saisir en log NGINX en cas d'echec de connexion () **/
+	"APP_LOG_ERROR_PATTERN": "ERROR_LEVEL = %3$d (%4$s)", // Test suppression inline comment
+	
+	/** [Integer] Interval de temps pour procédé à la mise en archive d'une table **/
+	"ARCHIVER_INTERVAL": 300,
+	
+/**
+	FOR
+	MULTI
+	LINE
+	COMMENT
+**/
+	/** [String] Clé de cryptage des mot de passe **/
+	"CRYPT_KEY": "MCOScheduler",
+	
+	/** [String] Vue par défault à afficher **/
+	"DEFAULT_SECTION": "TASKS-PLANNED",
+	
+	/** Liste des section (content) admis pour Portail **/
+	"SECTION": {
+		"TASKS-PLANNED": true,
+		"TASK-EDITOR": true,
+		"IMPORT-TASKS": true,
+		"EXPORT-TASKS": true,
+		"SEARCH": true,
+		"STATISTICS": true,
+		"PARAMS": true
+	},
+	
+	/** [String] Nom de l'environnement **/
+	"ENVIRONNEMENT": "Developpement",
+	
+	/** [Integer] Durée maximal d'execution en seconde d'un script PHP manipulant une masse de donnée DB (watcher.php) **/
+	"MAX_EXECUTION_TIME": 300,
+	
+	/** [String] Caractère de liaison pour les listes dropdown dont les données sont combinée **/
+	"MULTI_DATA_LIST_JOINNING_CHAR": " ► ",
+	
+	/** [Integer] Délais en millisecondes de communication avec le serveur **/
+	"SSE_RETRY": 1000,
+	
+	/** Pamaètres de configuration visuel des fichier Excel générée **/
+	"EXCEL": {
+		/** Paramètre des entête**/
+		"HEADER": {
+			"BACKGROUND_COLOR": "1f385e",
+			"COLOR": "ffffff"
+		}
+	},
+	
+	/** Spécification des fichiers de configuration XML **/
+	"XML_CONFIG": {
+		/** Fichiers de configuration pour l'import / export par fichier Excel **/
+		"FILE_XLS_SHEET": {
+			"EXTRACT": "config.xls.sheet.extract",
+			"LISTS": "'config.xls.sheet.lists"
+		},
+		
+		/** Fichier de configuration Statistics **/
+		"STATISTICS": "config.xls.statistics.sheet.statistics",
+		
+		/** Fichiers de configuration des structures SQL pour composition des requêtes SQL **/
+		"SQL": {
+			"USERS_FIELDS": "config.sql.users.fields.xml",
+			"GROUPS_FIELDS": "config.sql.groups.fields.xml",
+			"DOMAINS_FIELDS": "config.sql.domains.fields.xml",
+			"CUSTOMERS_FIELDS": "config.sql.customers.fields.xml"
+		}
+	},
+	
+	/** Paramètres SQL **/
+	"SQL": {
+		/** Nom des tables SQL de la base (correspondance en cas de changement) **/
+		"TABLE": {
+			/** [String] Table de donnée des clients **/
+			"CUSTOMERS": "CUSTOMERS",
+			
+			/** [String] Table de données des domaines d'application **/
+			"DOMAINS": "DOMAINS",
+			
+			/** [String] Table d'archivage des plannings **/
+			"SCHEDULES": "SCHEDULES",
+			
+			/** [String] Table de données des référence de modification des plannings (tables dynamiques) **/
+			"SCHEDULES_CHANGES": "SCHEDULES_CHANGES",
+			
+			/** [String] Table de données des références de modificaitons des tables système (tables fixes) **/
+			"TABLES_CHANGES": "TABLES_CHANGES",
+			
+			/** [String] Table de donnée centralisant les informations des actions **/
+			"TASKS": "TASKS",
+			
+			/** [String] Table de donnée de compte utilisateur de l'application **/
+			"USERS": "USERS"
+		},
+		
+		/** Indicateur boolean permettant ou non d'executer un process SQL **/
+		"PROCESS": {
+			/** [Boolean] Process SQL de mise en archive des plannings : true pour DEV, PRP & PRD uniquement **/
+			"SCHEDULES_ARCHIVER": true
+		}
+	}
+}

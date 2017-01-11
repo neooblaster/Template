@@ -1,0 +1,6 @@
+public
+boolean
+set_var
+String $var_name; Mixed $var_value 
+This methode let's you to define one by one a new couple variable = value.
+If the variable already defined, the method update it.

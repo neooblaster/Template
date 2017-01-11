@@ -1,0 +1,38 @@
+<!-- BEGIN_DECLARE(BLOCK) AS LOCAL_USERS -->
+<tr>
+	<td>{USER_ID}</td>
+	<td>{USER_NAME}</td>
+	<td>{USER_GROUP}</td>
+	<!-- IF (({{ALLOWED}} AND (strtolower({USER_GROUP}) == 'admins'))) AS IF_ALLOWED_AND_CAN_EDIT -->
+	<th>Editer</th>
+	<th>Supprimer</th>
+	<!-- ELSE -->
+	<th colspan="2">-</th>
+	<!-- ENDIF IF_ALLOWED_AND_CAN_EDIT -->
+	<th>
+		<ul>
+			<!-- BEGIN_BLOCK WITH ATTRIBUTS -->
+			<li>{NAME} :: {GRANT}</li>
+			<!-- END_BLOCK -->
+		</ul>
+	</th>
+</tr>
+<!-- END_DECLARE LOCAL_USERS -->
+
+<h1>
+	{USER_CONFIG_PANEL}
+</h1>
+
+<table>
+	<tr>
+		<th>ID</th>
+		<th>USERNAME</th>
+		<th>GROUP</th>
+		<th>EDITER</th>
+		<th>SUPPRIMER</th>
+		<th>ATTRIBUTS</th>
+	</tr>
+	<!-- BEGIN_PHP TEST -->
+		<!-- USE (LOCAL_USERS=>LDAP_USERS) -->
+	<!-- END_PHP TEST -->
+</table>

@@ -1,0 +1,34 @@
+<!-- BEGIN_DECLARE (BLOCK) AS USERS -->	
+<tr>
+	<td>%USER_ID%</td>
+	<td>%USER_NAME%</td>
+	<td>%USER_GROUP%</td>
+	<!-- USE (IF_ALLOWED_AND_CAN_EDIT) -->
+</tr>
+<!-- END_DECLARE USERS -->
+
+<!-- BEGIN_DECLARE (IF->(%%ALLOWED%% AND (strtolower(%USER_GROUP%) != 'admins'))) AS IF_ALLOWED_AND_CAN_EDIT -->
+<th>Editer</th>
+<th>Supprimer</th>
+<!-- ELSE -->
+<th colspan="2">-</th>
+<!-- END_DECLARE IF_ALLOWED_AND_CAN_EDIT -->
+
+
+<h1>
+	%USER_CONFIG_PANEL% [DECLARE]
+</h1>
+
+<table>
+	<tr>
+		<th>ID</th>
+		<th>USERNAME</th>
+		<th>GROUP</th>
+		<th>EDITER</th>
+		<th>SUPPRIMER</th>
+	</tr>
+	<!-- USE (USERS) -->
+</table>
+
+<!-- INCLUDE_TEMPLATE (Templates/Test/sub-tpl.html) -->
+
