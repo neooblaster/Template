@@ -8,9 +8,9 @@
 /** ---																																						---
 /** ---		AUTEUR 	: Nicolas DUPRE																												---
 /** ---																																						---
-/** ---		RELEASE	: 30.12.2016																													---
+/** ---		RELEASE	: 16.04.2017																													---
 /** ---																																						---
-/** ---		VERSION	: 3.3																																---
+/** ---		VERSION	: 3.4																																---
 /** ---																																						---
 /** ---																																						---
 /** --- 														-----------------------------															---
@@ -42,6 +42,17 @@
 
 /** ---																																						---
 /** ---																																						---
+/** ---																																						---
+/** ---																																						---
+/** ---		VERSION 3.4 : 16.04.2017																												---
+/** ---		------------------------																												---
+/** ---																																						---
+/** ---			-  Ajout d'un test d'existence pour ne pas générer d'erreur E_NOTICE lorsqu'on tente d'utiliser un jeu	---
+/** ---			de donnée inexistant.																												---
+/** ---																																						---
+/** ---			-  Dans la phase de bufferisation avant rendu, dans le cas où un block est detecté, une instruction		---
+/** ---			était inscrite, même pour la déclaration de block. Or la déclaration sert à bufferiser uniquement  		---
+/** ---			et non pas à étre inclus.																											---
 /** ---																																						---
 /** ---																																						---
 /** ---		VERSION 3.3 : 30.12.2016																												---
@@ -1954,14 +1965,13 @@ class Template {
 					}
 					
 					$instruction = "<!-- USE ($block_name$instruction_ext) -->\n";
-				}
-				
-				
-				/** Ecriture dans le fichier approprié **/
-				if($this->_buffered_flow_level < 0){
-					fputs($master_buffer, $instruction);
-				} else {
-					fputs($this->_buffered_files_res[$this->_buffered_flow_records[$this->_buffered_flow_level]['name']], $instruction);
+					
+					/** Ecriture dans le fichier approprié **/
+					if($this->_buffered_flow_level < 0){
+						fputs($master_buffer, $instruction);
+					} else {
+						fputs($this->_buffered_files_res[$this->_buffered_flow_records[$this->_buffered_flow_level]['name']], $instruction);
+					}
 				}
 				
 				/** Mise à jour des flags **/
@@ -2283,7 +2293,7 @@ class Template {
 		
 		/** Si le jeu de donnée par défault existe, on le récupère **/
 		// On le récupère dans le jeu de donnée du niveau du dessus
-		if(gettype($this->_use_vars_ref[$this->_use_vars_level - 1][$target]) === 'array'){
+		if(isset($this->_use_vars_ref[$this->_use_vars_level - 1][$target]) && gettype($this->_use_vars_ref[$this->_use_vars_level - 1][$target]) === 'array'){
 			$default_data = $this->_use_vars_ref[$this->_use_vars_level - 1][$target];
 		}
 			
