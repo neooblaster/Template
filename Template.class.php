@@ -10,7 +10,7 @@
 /** ---																																						---
 /** ---		RELEASE	: 16.04.2017																													---
 /** ---																																						---
-/** ---		VERSION	: 3.4																																---
+/** ---		VERSION	: 3.5.0																															---
 /** ---																																						---
 /** ---																																						---
 /** --- 														-----------------------------															---
@@ -42,6 +42,16 @@
 
 /** ---																																						---
 /** ---																																						---
+/** ---																																						---
+/** ---																																						---
+/** ---		VERSION 3.5.0 : 16.04.2017 																											---
+/** ---		-------------------------- 																											---
+/** ---																																						---
+/** ---			-  Ajout de la capacité à définir le modèle de composition des balises du moteur pour fonctionner avec	---
+/** ---			différent frameworks (En l'occurence, Pug ou <!-- rompe la colorisation syntaxique) 							---
+/** ---				>  Modèle par défault : <!-- --> 																							---
+/** ---																																						---
+/** ---			-  Correction de la méthode set_var_delims qui générée une erreur E_NOTICE											---
 /** ---																																						---
 /** ---																																						---
 /** ---		VERSION 3.4 : 16.04.2017																												---
@@ -403,6 +413,7 @@
 /** ---			- [Pub] set_output_name																												---
 /** ---			- [Pub] set_render_type																												---
 /** ---			- [Pub] set_template_file																											---
+/** ---			- [Pub] set_template_tags																											---
 /** ---			- [Pub] set_template_text																											---
 /** ---			- [Pub] set_temporary_repository																									---
 /** ---			- [Pri] set_text_as_file																											---
@@ -547,6 +558,10 @@ class Template {
 	protected $_start_var_delim_def;					// Délimiteur d'ouverture de variable défini
 	protected $_end_var_delim_def;					// Délimiteur de fermeture de variable défini
 	
+	protected $_ins_open_tag;							// STRING	:: Balise ouvrante des instructions du moteur Template (Pattern pour RegExp)
+	protected $_ins_close_tag;							// STRING	:: Balise Fermante des instructions du moteur Template (Pattern pour RegExp)
+	protected $_ins_open_tag_def;						// STRING	:: Balise ouvrante des instruction du moteur Template (text pure)
+	protected $_ins_close_tag_def;					// STRING	:: Balise ouvrante des instruction du moteur Template (text pure)
 	
 	
 
@@ -595,6 +610,7 @@ class Template {
 		
 		/** DECLENCHEMENT DE METHODE **/
 		$this->update_temporary_folders_path();
+		$this->set_template_tags();
 		
 		return true;
 	}
@@ -951,6 +967,31 @@ class Template {
 		return true;
 	} // Boolean set_template_file(String $source)
 	
+	/** ------------------------------------------------------------------------------------ **
+	/** --- Définition des séquence d'ouverture et fermeture d'une instruction du moteur --- **
+	/** ------------------------------------------------------------------------------------ **/
+	public function set_template_tags($open_tag=null, $close_tag=null){
+		/** > Sécurisation des arguments **/
+		//--- Tage de fermeture
+		if(is_null($open_tag) && is_null($close_tag)){
+			$close_tag = "-->";
+		} else if(!is_string($close_tag)) {
+			$close_tag = "";
+		}
+		
+		//--- Tag d'ouverture
+		if(is_null($open_tag) || !is_string($open_tag)) $open_tag = "<!--";
+		
+		
+		/** > Echappement des caractères **/
+		$this->_ins_open_tag = addcslashes($open_tag, "/");
+		$this->_ins_close_tag = addcslashes($close_tag, "/");
+		
+		/** > Sauvegarde du modèle défini **/
+		$this->_ins_open_tag_def = $open_tag;
+		$this->_ins_close_tag_def = $close_tag;
+	} // Boolean set_template_tag([ String $open_tag="<!--" [, String $close_tag="-->" ]])
+	
 	/** --------------------------------------- **
 	/** --- Définition d'un text à utiliser --- **
 	/** --------------------------------------- **/
@@ -1099,9 +1140,9 @@ class Template {
 		
 		/** Analyser le délimiteur **/
 		$start_delim_def = $delim;
-		$end_delim_def;
-		$start_delim;
-		$end_delim;
+		$end_delim_def = null;
+		$start_delim = null;
+		$end_delim = null;
 		
 		$delim_length = strlen($delim) - 1;
 		
@@ -1629,8 +1670,8 @@ class Template {
 			$assign_value = null;
 		
 			// PATTERN
-			$use_pattern = "#\s*<!--\s+USE((\s+)|(\())#i";
-			$include_pattern = "#\s*<!--\s+INCLUDE_TEMPLATE((\s+)|(\())#i";
+			$use_pattern = "#\s*{$this->_ins_open_tag}\s+USE((\s+)|(\())#i";
+			$include_pattern = "#\s*{$this->_ins_open_tag}\s+INCLUDE_TEMPLATE((\s+)|(\())#i";
 		
 		/** CONTROLE SI INCLUDE **/
 		if(preg_match($include_pattern, $buffer)){
@@ -1812,15 +1853,15 @@ class Template {
 				$processing_line = 0;
 			
 			// PATTERNS
-				$begin_declare_pattern = "#\s*<!--\s+BEGIN_DECLARE((\s+)|(\())#";
-				$begin_block_pattern = "#\s*<!--\s+BEGIN_BLOCK#";
-				$begin_if_pattern = "#\s*<!--\s+IF((\s+)|(\())#";
-				$begin_php_pattern = "#\s*<!--\s+BEGIN_PHP#";
+				$begin_declare_pattern = "#\s*{$this->_ins_open_tag}\s+BEGIN_DECLARE((\s+)|(\())#";
+				$begin_block_pattern = "#\s*{$this->_ins_open_tag}\s+BEGIN_BLOCK#";
+				$begin_if_pattern = "#\s*{$this->_ins_open_tag}\s+IF((\s+)|(\())#";
+				$begin_php_pattern = "#\s*{$this->_ins_open_tag}\s+BEGIN_PHP#";
 				
-				$end_declare_pattern = "#\s*<!--\s+END_DECLARE#";
-				$end_block_pattern = "#\s*<!--\s+END_BLOCK#";
-				$end_if_pattern = "#\s*<!--\s+ENDIF#";
-				$end_php_pattern = "#\s*<!--\s+END_PHP#";
+				$end_declare_pattern = "#\s*{$this->_ins_open_tag}\s+END_DECLARE#";
+				$end_block_pattern = "#\s*{$this->_ins_open_tag}\s+END_BLOCK#";
+				$end_if_pattern = "#\s*{$this->_ins_open_tag}\s+ENDIF#";
+				$end_php_pattern = "#\s*{$this->_ins_open_tag}\s+END_PHP#";
 		
 		
 		/** LECTURE DU MODELE **/
@@ -1911,7 +1952,7 @@ class Template {
 					case 'if':
 						$block_extension = $this::IF_BLOCK_EXT;
 						/** Particularité au block IF, l'instruction doit être enregistrée **/
-						$buffer = "<!-- IF ".$input_param[1]." AS $block_name -->\n"; // Ré-écriture du buffer
+						$buffer = "{$this->_ins_open_tag_def} IF ".$input_param[1]." AS $block_name {$this->_ins_close_tag_def}\n"; // Ré-écriture du buffer
 					break;
 					case 'php':
 						$block_extension = $this::PHP_BLOCK_EXT;
@@ -1964,7 +2005,7 @@ class Template {
 						}
 					}
 					
-					$instruction = "<!-- USE ($block_name$instruction_ext) -->\n";
+					$instruction = "{$this->_ins_open_tag_def} USE ($block_name$instruction_ext) {$this->_ins_close_tag_def}\n";
 					
 					/** Ecriture dans le fichier approprié **/
 					if($this->_buffered_flow_level < 0){
@@ -2009,7 +2050,7 @@ class Template {
 				}
 				
 				/** Composition du pattern de fin correspondant **/
-				$end_pattern = "#\s*<!--\s+$end_tag#";
+				$end_pattern = "#\s*{$this->_ins_open_tag}\s+$end_tag#";
 				
 				/** Rechercher si la fin est atteinte **/
 				if(preg_match($end_pattern, $buffer)){
@@ -2084,9 +2125,10 @@ class Template {
 		$instruction = preg_replace('#^\s+#', '', $instruction);
 		
 		/** Pattern de découpage **/
-		$is_pattern_start = "#<!--\s+(?i)BEGIN_(BLOCK|PHP)(?-i)\s+#";
+		// Note ?i permet de rendre la suite insensible a la casse, puis ?-i retire le modifier i
+		$is_pattern_start = "#{$this->_ins_open_tag}\s+(?i)BEGIN_(BLOCK|PHP)(?-i)\s+#";
 		//$is_pattern_params = "#\s*(?i)(EXTEND\s+)?(WITH\s+\w+)(?-i)\s+-->$#";
-		$is_pattern_params = "#\s*(?i)((EXTEND\s+)?WITH\s+\w*)?(?-i)\s*-->$#";
+		$is_pattern_params = "#\s*(?i)((EXTEND\s+)?WITH\s+\w*)?(?-i)\s*{$this->_ins_close_tag}$#";
 		
 		/** #1. Obtention du nom **/
 			// Supression du début de l'instruction
@@ -2102,9 +2144,9 @@ class Template {
 			// Si un nom existe, on le supprime puisqu'il est connu
 			$operator = ($name !== null) ? preg_replace("#\s*$name\s*#", '', $operator) : $operator;
 			// Supprimer la valeur du paramètre
-			$operator = preg_replace("#\s*\w*(?i)(?<!WITH)(?-i)\s*-->$#", '', $operator);
+			$operator = preg_replace("#\s*\w*(?i)(?<!WITH)(?-i)\s*{$this->_ins_close_tag}$#", '', $operator);
 			// Supprimer la balise fermant en cas d'absence de nom et de paramètre 
-			$operator = preg_replace("#\s*-->$#", '', $operator);
+			$operator = preg_replace("#\s*{$this->_ins_close_tag}$#", '', $operator);
 			// Affinage
 			$operator = ($operator === '') ? null : $operator;
 		
@@ -2116,7 +2158,7 @@ class Template {
 			// Si la partie paramètre existe, on la supprime puisque connue
 			$value = ($operator !== null) ? preg_replace("#\s*$operator\s*#", '', $value) : $value;
 			// Supprimer la balise fermant en cas d'absence de nom et de paramètre 
-			$value = preg_replace("#\s*-->$#", '', $value);
+			$value = preg_replace("#\s*{$this->_ins_close_tag}$#", '', $value);
 			// Affinage
 			$value = ($value === '') ? null : $value;
 		
@@ -2171,7 +2213,7 @@ class Template {
 	/** --------------------------------------------------------------------- **
 	/** --- Fonction principal de rendu. Prepare le rendu et le déclenche --- **
 	/** --------------------------------------------------------------------- **/
-	public function render($template_file=null){ 
+	public function render($template_file=null){
 		if($this->_start_var_delim !== ''){
 			/** -------------------------------------------------------------------------------- **
 			/** ---								DECLARATION DES VARIABLES									--- **
@@ -2369,9 +2411,9 @@ class Template {
 	private function rendering_if($tmp_file){
 		/** Déclaration des variables **/
 			// PATTERNS
-			$begin_if_pattern = "#\s*<!--\s+IF((\s+)|(\())#";
-			$else_if_pattern = '#\s*<!--\s+ELSEIF((\s+)|(\())#';
-			$else_pattern = '#\s*<!--\s+ELSE\s+#';
+			$begin_if_pattern = "#\s*{$this->_ins_open_tag}\s+IF((\s+)|(\())#";
+			$else_if_pattern = "#\s*{$this->_ins_open_tag}\s+ELSEIF((\s+)|(\())#";
+			$else_pattern = "#\s*{$this->_ins_open_tag}\s+ELSE\s+#";
 		
 			// FLAGS
 			$part_approved = false;
