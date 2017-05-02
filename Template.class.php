@@ -8,7 +8,7 @@
 /** ---																																						---
 /** ---		AUTEUR 	: Nicolas DUPRE																												---
 /** ---																																						---
-/** ---		RELEASE	: 16.04.2017																													---
+/** ---		RELEASE	: 03.05.2017																													---
 /** ---																																						---
 /** ---		VERSION	: 3.5.0																															---
 /** ---																																						---
@@ -44,7 +44,7 @@
 /** ---																																						---
 /** ---																																						---
 /** ---																																						---
-/** ---		VERSION 3.5.0 : 16.04.2017 																											---
+/** ---		VERSION 3.5.0 : 03.05.2017 																											---
 /** ---		-------------------------- 																											---
 /** ---																																						---
 /** ---			-  Ajout de la capacité à définir le modèle de composition des balises du moteur pour fonctionner avec	---
