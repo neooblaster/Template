@@ -11,7 +11,7 @@
 	//header('Cache-Control: no-cache');
 
 	/** CHARGEMENT DES FONCTIONS, CLASSES ET PARAMS **/
-	require 'Template.class.php';
+	require '../src/Template.class.php';
 
 	/** DECLARATION DES VARIABLES **/
 	/** DECLARATION DES VARIABLES POUR LE MOTEUR **/
