@@ -32,7 +32,7 @@ install: true
 #before_script:
   #
 
-script: phpunit tests/tests.php
+#script: phpunit tests/tests.php
 
 #before_cache:
 
