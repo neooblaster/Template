@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Paths are relative from current working directory (CWD) where phpdoc is executed -->
+<phpdoc>
+    <title>Documentation Title</title>
+
+    <parser>
+        <target>./docs/cache</target>
+
+        <!-- Read files with theses extensions -->
+        <extensions>
+            <extension>php</extension>
+        </extensions>
+    </parser>
+
+    <transformer>
+        <target>./docs</target>
+    </transformer>
+
+    <files>
+        <!-- Directories to read -->
+        <directory>.</directory>
+
+        <!-- Files to read -->
+
+        <!-- Ignore rules -->
+        <!--<ignore>path/directory/*</ignore>-->
+    </files>
+
+</phpdoc>
