@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- https://phpunit.de/manual/6.1/en/appendixes.configuration.html -->
-<phpunit
-    colors="true"
-    >
-
+<phpunit>
     <testsuites name="Renders">
         <file>tests/tests.php</file>
     </testsuites>
-
-    <!--<filter></filter>-->
-
-    <!--<logging><log type="" target=""/></loggin>-->
-
 </phpunit>
