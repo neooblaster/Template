@@ -27,12 +27,9 @@
  *
  * @return void
  */
-use PHPUnit\Framework\TestCase;
-
-class TemplateTest extends TestCase
+class Test extends PHPUnit_Framework_TestCase
 {
-    public function testXxx()
-    {
-        $this->assertEquals(2, 1+1);
+    public function testOnePlusOne() {
+        $this->assertEquals(2,1+1);
     }
 }
