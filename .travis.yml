@@ -1,3 +1,6 @@
+# Travis Variables:
+# $TRAVIS_TEST_RESULT
+
 language: php
 
 php:
@@ -9,19 +12,40 @@ php:
   - 7.1
   - hhvm
 
-#before_script:
-  #- travis_retry composer self-update
-  #- travis_retry composer install --no-interaction --prefer-source --dev
 
-#script:
-  #- vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
 
-#after_script:
-  #- vendor/bin/test-reporter --coverage-report coverage.xml
+# Skip Installation Step
+install: true
 
-#after_success:
-  #- bash <(curl -s https://codecov.io/bash)
 
-#addons:
-  #code_climate:
-    #repo_token: d16eac66156a1f7a995de17964d4ffdd152821ab52e8470b5dbd5d3406406836
+
+# Build LifeCycle
+apt addons:
+
+cache components:
+
+before_install:
+  # Ubuntu Package or custom service
+
+install:
+
+before_script:
+  #
+
+script:
+
+before_cache:
+
+after_success:
+  # Additional step on build success e.g. as building documentation
+
+after_failure:
+  # Additional step on build failed e.g. as sending log file
+
+before_deploy:
+
+deploy:
+
+after_deploy:
+
+after_script:
