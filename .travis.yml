@@ -20,32 +20,32 @@ install: true
 
 
 # Build LifeCycle
-apt addons:
+#apt addons:
 
-cache components:
+#cache components:
 
-before_install:
+#before_install:
   # Ubuntu Package or custom service
 
-install:
+#install:
 
-before_script:
+#before_script:
   #
 
-script:
+script: phpunit tests/tests.php
 
-before_cache:
+#before_cache:
 
-after_success:
+#after_success:
   # Additional step on build success e.g. as building documentation
 
-after_failure:
+#after_failure:
   # Additional step on build failed e.g. as sending log file
 
-before_deploy:
+#before_deploy:
 
-deploy:
+#deploy:
 
-after_deploy:
+#after_deploy:
 
-after_script:
+#after_script:
