@@ -1,0 +1,18 @@
+# Sources : https://styleci.readme.io/docs/getting-started
+# Fixers : https://styleci.readme.io/docs/fixers
+
+preset: psr2
+
+risky: false
+
+enabled:
+    
+disabled:
+    
+finder:
+    # Tags : exclude, depth, [not-](name, contains, path)
+    name:
+        - "*.php"
+        
+    path:
+        - "./src"

@@ -17,13 +17,6 @@
     </transformer>
 
     <files>
-        <!-- Directories to read -->
-        <directory>.</directory>
-
-        <!-- Files to read -->
-
-        <!-- Ignore rules -->
-        <!--<ignore>path/directory/*</ignore>-->
+        <directory>./src</directory>
     </files>
-
 </phpdoc>
