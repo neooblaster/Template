@@ -12,5 +12,13 @@ php:
 # ----------------------- #
 # --- Build LifeCycle --- #
 # ----------------------- #
+script:
+  - phpunit --verbose --coverage-text
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - vendor/bin/test-reporter
+
+addons:
+  code_climate:
+    repo_token: 14050ab7895f3478d253a372b219535dd2c9cb4848a21674ad8cf4649e8f49b1
