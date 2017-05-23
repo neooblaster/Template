@@ -2,6 +2,7 @@
 <!-- Source : https://phpunit.de/manual/6.1/en/appendixes.configuration.html -->
 <phpunit
     colors="true"
+    stopOnError="false"
 >
     <testsuites>
         <testsuite name="suiteName">
@@ -12,6 +13,11 @@
 
     <filter>
         <!-- Tags : whitelist, blacklist with children directory, file, exclude -->
+        <whitelist addUncoveredFilesFromWhitelist="false" processUncoveredFilesFromWhitelist="false">
+            <directory>
+                tests
+            </directory>
+        </whitelist>
     </filter>
 
     <logging>
