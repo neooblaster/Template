@@ -15,6 +15,9 @@ php:
 script:
   - phpunit --verbose --coverage-text
 
+after_script:
+  - vendor/bin/test-reporter --coverage-report coverage.xml
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - vendor/bin/test-reporter
