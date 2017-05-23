@@ -12,11 +12,11 @@ php:
 # ----------------------- #
 # --- Build LifeCycle --- #
 # ----------------------- #
+before_script:
+  - phpunit --self-update
+
 script:
   - phpunit --verbose --coverage-text
-
-after_script:
-  - vendor/bin/test-reporter --coverage-report coverage.xml
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
