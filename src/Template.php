@@ -1,569 +1,268 @@
 <?php
-/** ----------------------------------------------------------------------------------------------------------------------- 
-/** ----------------------------------------------------------------------------------------------------------------------- 
-/** ---																																						---
-/** --- 											----------------------------------------------- 											---
-/** --- 													{ T E M P L A T E . C L A S S . P H P } 	  											---
-/** --- 											----------------------------------------------- 											---
-/** ---																																						---
-/** ---		AUTEUR 	: Nicolas DUPRE																												---
-/** ---																																						---
-/** ---		RELEASE	: 03.05.2017																													---
-/** ---																																						---
-/** ---		VERSION	: 3.5.0																															---
-/** ---																																						---
-/** ---																																						---
-/** --- 														-----------------------------															---
-/** --- 															 { C H A N G E L O G } 																---
-/** --- 														-----------------------------															---
-/** ---																																						---
-/** ---																																						---
-/** ---																																						---
-/** ---																																						---
-/** ---																																						---
+/**
+ * Fichier :: Template.php
+ *
+ * %DESC BLOCK%
+ *
+ * @author    Nicolas DUPRE
+ * @release   24/08/2017
+ * @version   3.6.0
+ * @package   Template
+ *
+ * @TODO : Permettre d'assigner un ou plusieurs jeu de donnée à un block
+ * @TODO : Refaire Doc
+ * @TODO : Template->get_if_block_name() failed; Keyword 'AS' is missing in this conditionnal instruction
+ * @TODO : Erreur open_render_file truc, probleme de droit sur le dossier, voir si constant pour user web et l'indiqué
+ * @TODO : Automatiser output_name (facultative)
+ * @TODO : Auto aliasé les block IF si AS not used
+ * @TODO : Permettre d'assigner un ou plusieurs jeu de donnée à un block
+ *
+ */
 
+namespace Template;
 
+/**
+ * @var Array _PHP Variable Globale permettant l'interface entre le PHP des Templates et les scripts appelants.
+ */
+$GLOBALS["_PHP"] = Array();
 
-	> Permettre d'assigner un ou plusieurs jeu de donnée à un block
-	
-	> refaire doc
-	
-	> Template->get_if_block_name() failed; Keyword 'AS' is missing in this conditionnal instruction :
-	
-	> Erreur open_render_file truc, probleme de droit sur le dossier, voir si constant pour user web et l'indiqué
-	
-	> Automatiser output_name (facultative)
-	
-	> Auto aliasé les block IF si AS not used
-
-	> Permettre d'assigner un ou plusieurs jeu de donnée à un block
-
-
-
-/** ---																																						---
-/** ---																																						---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 3.5.0 : 03.05.2017 																											---
-/** ---		-------------------------- 																											---
-/** ---																																						---
-/** ---			-  Ajout de la capacité à définir le modèle de composition des balises du moteur pour fonctionner avec	---
-/** ---			différent frameworks (En l'occurence, Pug ou <!-- rompe la colorisation syntaxique) 							---
-/** ---				>  Modèle par défault : <!-- --> 																							---
-/** ---																																						---
-/** ---			-  Correction de la méthode set_var_delims qui générée une erreur E_NOTICE											---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 3.4 : 16.04.2017																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			-  Ajout d'un test d'existence pour ne pas générer d'erreur E_NOTICE lorsqu'on tente d'utiliser un jeu	---
-/** ---			de donnée inexistant.																												---
-/** ---																																						---
-/** ---			-  Dans la phase de bufferisation avant rendu, dans le cas où un block est detecté, une instruction		---
-/** ---			était inscrite, même pour la déclaration de block. Or la déclaration sert à bufferiser uniquement  		---
-/** ---			et non pas à étre inclus.																											---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 3.3 : 30.12.2016																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			-  Mise à jour de la méthode __construct :																					---
-/** ---				>  __construct : Suppression du test gettype($_SESSION) générant une erreur de niveau NOTICE				---
-/** ---				>  Ajout d'un paramétre facultatif définissant le mode debug ou non												---
-/** ---																																						---
-/** ---			-  Mise à jour de la méthode get_if_block_name :																			---
-/** ---				>  Suppression de la fonction die au profit de throw_error															---
-/** ---																																						---
-/** ---			-  Sécurisation de la saisie des arguments : 																				---
-/** ---				>  __construct																														---
-/** ---				>  set_mail_recipients																											---
-/** ---				>  set_mail_sender																												---
-/** ---				>  set_mail_sender_name																											---
-/** ---				>  set_mail_subject																												---
-/** ---				>  set_output_name																												---
-/** ---				>  set_render_type																												---
-/** ---				>  set_utf8_read_treatment																										---
-/** ---				>  set_utf8_write_treatment																									---
-/** ---																																						---
-/** ---			-  Mise à jour de la methode add_history :																					---
-/** ---				>  Simplification sur lenregistrement et l'émission de message d'erreur											---
-/** ---				>  On ajoute toujours une entrée dans l'historique																		---
-/** ---				>  Si le mode debug est activé, envois l'erreur par la suite														---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode permettant de modifier le mode debug :  														---
-/** ---				>  Boolean set_debug_mode(Boolean $debug_mode)																			---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode pour définir une variable précisément : 														---
-/** ---				>  Boolean set_var(String $var_name, Mixed $var_value)																---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode pour mettre à jour une masse de variable : 													---
-/** ---				>  Boolean update_vars(Array $vars)																							---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode pour désallouer une ou plusieurs variables :													---
-/** ---				>  Boolean unset_vars(Mixed $vars) (String | Array)																	---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode pour inverser les valeurs boolean des variables specifiées :								---
-/** ---				>  Boolean xor_vars(Mixed $vars) (String | Array)																		---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode statiques permettant de supprimer les blancs (CRLF & Tabulation) :						---
-/** ---				>  String strip_blank(String $text)																							---
-/** ---																																						---
-/** ---			-  Ajout de méthodes statiques pour supprimer les commentaires du language donnée : 							---
-/** ---				>  cleanse_sql																														---
-/** ---				>  cleanse_js																														---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 3.2 : 29.05.2016																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			-  Ajout d'un nouveau type de block déclarable : TEMPLATE																---
-/** ---				>  Permet la création d'un ensemble (simple et block) et de l'interpréter à la facon d'un modèle		---
-/** ---					inclus mais interne																											---
-/** ---				>  Instruction : BEGIN_DECLARE (TEMPLATE) AS NAME																		---
-/** ---				>  Callable à l'aide de <!-- USE () -->																					---
-/** ---																																						---
-/** ---			-  Introduction des operateurs WITH et EXTEND WITH																			---
-/** ---				>  Permet l'utilisation combiné (WITH @Fusion recusrive) avec un jeu de donnée specifié					---
-/** ---				>  Permet l'extension de donnée (EXTEND WITH @Join recursive) avec le jeu de donnée spécifié				---
-/** ---				>  Permet l'utilisation de block anonyme																					---
-/** ---					-  Si utilisé, l'operateur (EXTEND)? WITH	est obligatoire, sinon faculatifs								---
-/** ---				>  Permet la retrocompatibilité																								---
-/** ---				>  Permet d'optimisier les jeux de donnée à envoyer au moteur  													---
-/** ---				>  Introduction de la méthode :  array_merge_index_recursive														---
-/** ---					- méthode de fusion de tableau récursive en faisant abstraction des index  								---
-/** ---				>  Syntaxe de WITH dans l'instruction WITH : 			<!-- USE (Block->Data) -->								---
-/** ---				>  Syntaxe de EXTEND WITH dans l'instruction WITH : 	<!-- USE (Block=>Data) -->								---
-/** ---				>  Simplification de la balise de fermeture pù le nom n'est plus nécessaire et devient optionnel		---
-/** ---																																						---
-/** ---			-  Ajout d'une méthode de génération d'erreur "throw_error"																---
-/** ---				>  Gestion des erreurs plus explicite et soignée																		---
-/** ---																																						---
-/** ---			-  Renomage de show_warnings en show_historic																				---
-/** ---			-  Ajout de la méthode public add_history																						---
-/** ---			-  Suppresion de get_block_name au profit de read_block_instruction													---
-/** ---																																						---
-/** ---		VERSION 3.1 : 04.12.2015																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			-  Permettre l'utilisations des parenthèses, des crochets et accolades en tant que délimiteurs				---
-/** ---				>  Introduction d'un délimiteur de début et un délimiteur de fin													---
-/** ---																																						---
-/** ---		VERSION 3.0 : 21.11.2015																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			-  Révision totale de rendering_line : 98% d'optimisation																---
-/** ---				Utilisation sur une app : 164 variable envoyée, 267 variable à remplacer - 13200 traitement effectué  ---
-/** ---					> A chaque line envoyé, ils parcourait toutes les donnée envoyée												---
-/** ---					> Maintenant il recherche les variables, les cacth, cherche si elles existe et si oui les remplace	---
-/** ---						=> 164 variables envoyées, 267 variables à remplacer - 267 traitements									---
-/** ---																																						---
-/** ---																																						---
-/** ---			-  Révision de la méthode remove_folder pour qu'elle soit récursive													---
-/** ---																																						---
-/** ---																																						---
-/** ---			-  Révision totale de render() et prepare_buffers																			---
-/** ---				> Facilite l'implémentation de nouvelles instructions																	---
-/** ---				> Render() et prepare_buffers() ont chacun un vrai role distinct et un comportement propre				---
-/** ---					Auparavant, elle avait le même principe de fonctionnement, mais des rôles légérement différent		---
-/** ---					Beaucoup de répétions de code entre elles																				---
-/** ---				> Prise en charge global des imbrications sans développement supplémentaire pour les futures instruct°---
-/** ---				> Plusss de fichiers temporaires, mais plus aucun contenu répété													---
-/** ---																																						---
-/** ---				-> Méthodes impactées :																											---
-/** ---					- Supprimées : 																												---
-/** ---						- get_blocks_vars				: Plus de distinction entre variable simple et blocks						---
-/** ---						- get_php_code					: Duplicata de get_template_path													---
-/** ---						- set_blocks_vars				: Plus de distinction entre variable simple et blocks						---
-/** ---						- render_code					: Duplicata de rendering_line, sauf qu'elle faisait un return			---
-/** ---																																						---
-/** ---					- Ajoutées :																													---
-/** ---						- get_template_file_name	: Renvois le modèle défini	par set_template_file()							---
-/** ---						- control_buffer				: Programme d'identification d'instruction et triggerer					---
-/** ---						- path_file_to_name			: Convertir un path (folder/name) en name (folder.name)					---
-/** ---						- rendering_if					: Programme de traitement des blocks IF										---
-/** ---						- rendering_php				: Programme de traitement des blocks PHP										---
-/** ---						- store_buffer					: Ecris dans le fichier final la ligne demandée								---
-/** ---																																						---
-/** ---					- Mise à jour :																												---
-/** ---						- prepare_buffer				: Programme de dispath des blocks en fichier temporaire					---
-/** ---						- render							: Programme de renderisation du document										---
-/** ---						- rendering_block				: Programme de traitement des blocks normaux									---
-/** ---																																						---
-/** ---					- Mise à jour & Renommées :																								---
-/** ---						- get_template_path	==> get_input_param	: Lit les valeurs entre parenthèses dans les instruct°---
-/** ---						- rendering_line 		==> render_buffer		: Renvois le buffer renderisé, mais n'ecrit plus		---
-/** ---																																						---
-/** ---																																						---
-/** ---			-  Implémentation de l'instruction de déclaration de block	(BEGIN_DECLARE)										---
-/** ---			-  Implémentation de l'instruction d'appel d'un block déclaré	(USE)													---
-/** ---				> Le block peut etre déclaré proprement ou réutilisé s'il n'a pas été déclaré									---
-/** ---			-  Impélementation des cas ELSEIF et ELSE																						---
-/** ---																																						---
-/** ---				-  Nouvelles Instructions :																									---
-/** ---					-  Private :																													---
-/** ---																																						---
-/** ---					-  Public : 																													---
-/** ---						<!-- IF (cdn) AS NAME -->																								---
-/** ---						<!-- ELSEIF (cdn) -->																									---
-/** ---						<!-- ELSE -->																												---
-/** ---						<!-- ENDIF NAME -->																										---
-/** ---																																						---
-/** ---						<!-- USE (nom_block_previously_declare_or_used) -->															---
-/** ---																																						---
-/** ---						<!-- BEGIN_DECLARE (BLOCK|PHP|IF->(%DNC%)) AS NAME -->														---
-/** ---						<!-- END_DECLARE NAME -->																								---
-/** ---																																						---
-/** ---		VERSION 2.9 : 07.11.2015																												---
-/** ---		------------------------																												---
-/** ---																																						---
-/** ---			- Permettre d'envoyer du texte à la place d'un template (soit l'un soit l'autre) :								---
-/** ---				> Renommage de la méthode set_template_source en set_template_file												---
-/** ---				> Ajout de deux flags :																											---
-/** ---					$_template_file_used AND $_template_text_used																		---
-/** ---				> Ajout de deux fonctions de désallocation pour passer du mode de modèle "FICHIER" a "TEXT"				---
-/** ---					unset_template_file AND unset_template_text																			---
-/** ---				> Ajout d'une méthode de création de fichier template temporaire avec assimilation en tant que source	---
-/** ---					set_text_as_file()																											---
-/** ---				> Ajout d'une méthode de récupération du text défini : get_template_text()										---
-/** ---																																						---
-/** ---			- Mettre en place un système pour qu'un bloc puisse appeler une variable simple (optimisation)				---
-/** ---				> Utilisation : %%VARIABLE%%																									---
-/** ---				> Révision de la méthode render_line() :																					---
-/** ---					- Une premiere partie du fonctionnement est fixe sur les variables simple									---
-/** ---					- Une seconde partie du fonctionnement est dynamique sur l'ensemble de variable indiqué				---
-/** ---																																						---
-/** ---			- Implémentation des block conditionnel <!-- IF ($test) AS NAME -->													---
-/** ---				> Révision de render() et rendering_block() pour gérer les blocks conditionnel								---
-/** ---				> Création des fonctions get_block_name() et get_if_block_name()													---
-/** ---				> Comportement identique à une simple variable lorsqu'il est inclus ds un block normal						---
-/** ---				> Imbrication possible de block conditionnel																				---
-/** ---																																						---
-/** ---			- Corrections diverses :																											---
-/** ---				• Intégration du flag render_env_exist = true directement dans la méthode make_render_env()				---
-/** ---				• Pour le nettoyage, utilisation de SCRIPT_FILENAME au lieu de DOCUMENT_ROOT, plus compatible :			---
-/** ---					- Compatible mutualisé OVH avec sous-domaine																			---
-/** ---					- Compatible Apach et NGNIX																								---
-/** ---				• Correction du traitement des blocks Imbriqués. Un block parent interprétait la balise de fin d'un	---
-/** ---					 block enfant. De ce fait la suite des codes étaient interprétés et insérés au block parent alors	---
-/** ---					 qu'il faisait partis du block enfant																					---
-/** ---																																						---
-/** ---		VERSION 2.8.1 : 31.08.2015																												---
-/** ---		--------------------------																												---
-/** ---																																						---
-/** ---			- Correction du système de détermination du nom de dossier temporaire : 											---
-/** ---				> $_REQUEST['PHPSESSID'] >>> session_id()																					---
-/** ---																																						---
-/** ---		VERSION 2.8 : 27.07.2015																												---
-/** ---		-------------------------																												---
-/** ---																																						---
-/** ---			- Correction du comportement de la methode de nettoyage de l'environnement de rendering						---
-/** ---				>  Methode cleansing_render_env() appelée par __destruct fonctionnait à la racine serveur 				---
-/** ---				>  Création de la méthode cleansing_render_env_root() pour travailler avec $_SERVER['DOCUMENT_ROOT']	---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 2.7 : 30.03.2015																												---
-/** ---		-------------------------																												---
-/** ---																																						---
-/** ---			- Implémentation d'une variable superglobale personnalisée pour enoyer des données dans les codes PHP		---
-/** ---				des templates : $_PHP																											---
-/** ---			- Création d'une fonction de traitement des instructions du moteur en cas d'utilisation de variables		---
-/** ---				-> Methode créée pour traiter les instruction : render_code($buffer)												---
-/** ---				-> Permettre d'utiliser des variables pour les INCLUDE_TEMPLATE													---
-/** ---				-> Permettre d'utiliser des variables dans les block PHP BEGIN_PHP												---
-/** ---			-> Optimisation de render_line : compter le nombre de variable et une fois remplacée :							---
-/** ---				-> Interrompre la boucle à l'aide d'un break;																			---
-/** ---																																						---
-/** ---		VERSION 2.6.1 : 29.03.2015																												---
-/** ---		---------------------------																											---
-/** ---																																						---
-/** ---			- Modification des sortie de la méthode render pour cascader avec display et get_render_content 			---
-/** ---				sous la forme de $moteur->render()->display()																			---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 2.6 : 27.03.2015																												---
-/** ---		-------------------------																												---
-/** ---																																						---
-/** ---			- Permettre l'utilisation de code PHP dans les templates																	---
-/** ---			- Permet l'utilisation de template inclus pour du BEGIN_BLOCK															---
-/** ---				-> Création de la méthode get_template_path																				---
-/** ---			- Gérer le multi repository sur output_directory dans un cas render_type perma									---
-/** ---				-> Récupération par argument des repository																				---
-/** ---				-> Dépot se fait par copy à l'aide d'une boucle sur l'array stockant les repository							---
-/** ---				-> Suppression de tout ce qui est attrait à _output_file_name (obselete)										---
-/** ---				-> Suppression de tout ce qui est attrait à _output_directory >>> _output_directories						---
-/** ---																																						---
-/** ---																																						---
-/** ---		VERSION 2.5.4 : 14.03.2015																												---
-/** ---		---------------------------																											---
-/** ---																																						---
-/** ---			- Correction de l'environnement de travail temporaire lorsqu'on change												---
-/** ---				> De modèle																															---
-/** ---				> De dossier de dépot																											---
-/** ---				> De dossier temporaire																											---
-/** ---			- Correction des methodes get_render_content() et display() - Peut importe le render_type, 					---
-/** ---				le constructeur PHP __destruct déclenche la purge de l'environnement de travail.								---
-/** ---				-> Pas besoin de declencher un nettoyage apres l'execution de ces deux methodes								---
-/** ---				-> Permet d'executer display(), get_render_content() et sendMail() à la suite meme							---
-/** ---					en render_type temporary																									---
-/** ---																																						---
-/** ---		VERSION 2.5.3 : 07.03.2015																												---
-/** ---		---------------------------																											---
-/** ---																																						---
-/** ---			- Création d'une methode pour demander de conserver les fichiers temporaire : set_keep_temp_file			---
-/** ---			- La définition du délimiteur n'est plus obligatoire. La valeur par défaut est "%"								---
-/** ---				-> Reduit le nombre d'instruction de configuration du moteur à deux ligne seulement							---
-/** ---																																						---
-/** ---		VERSION 2.5.2 : 05.03.2015																												---
-/** ---		---------------------------																											---
-/** ---																																						---
-/** ---			- Implémentation de la gestion d'imbrication de template	(recusrive)													---
-/** ---				-> Modification des methodes open_template_file() et close_template_file()										---
-/** ---				-> Modification des methodes render(), prepare_buffer()																---
-/** ---				=> En paramètre, est spécifié le modele sur lequel on travail														---
-/** ---					->	Permet l'imbrication de template à x niveau, mais l'inclusion de template ne fonction pas dans	---
-/** ---						block																															---
-/** ---																																						---
-/** ---		VERSION 2.5.1 : 05.03.2015																												---
-/** ---		---------------------------																											---
-/** ---																																						---
-/** ---			- Révision compléte de la mécanique des fichiers temporaires et du mode de rendu									---
-/** ---				-> Modification de la methode close_output_file() en close_temporary_render_file								---
-/** ---				-> Modification de la methode open_output_file() en open_temporary_render_file								---
-/** ---				-> Modification de la methode make_temporary_directory() en make_render_env()									---
-/** ---																																						---
-/** ---		VERSION 2.4 :																																---
-/** ---		-------------																																---
-/** ---																																						---
-/** ---			- La propriété _output_directory à la valeur par défaut : . faisant référence au dossier executant			---
-/** ---				la classe																															---
-/** ---			- Ajout d'une méthode pour obtenir le contenu du rendu : get_render_content()										---
-/** ---				-> get_render_content() retourne une chaine alors que display() l'affiche directement						---
-/** ---			- Permettre de faire des rendu temporaire et permanent																	---
-/** ---				-> Ajout d'une methode pour définir le type de rendu attendu														---
-/** ---				-> Ajout d'une methode pour purger et supprimer un dossier : remove_folder (non recursif)					---
-/** ---				-> Si Permanent, utiliser le render répository spécifié uniquement												---
-/** ---				-> Si Temporaire, créer un dossier temp dans le render repositiory spécifié									--- 
-/** ---				-> Mise à jour de display() : a la fin, appel de remove_folder si render_type = temporary					---
-/** ---				-> Remplacement de remove_temporary_folder par remove_folder qui est globale car path spécifié			---
-/** ---																																						---
-/** ---		VERSION 2.3 :																																---
-/** ---		-------------																																---
-/** ---			- Ajout de la méthode get_blocks_vars -> retourne le tableau pour manipulation si besoin						---
-/** ---			- Edit de la méthode get_vars -> retourne le tableau pour manipulation si besoin									---
-/** ---			- Intégration de la notion de chemin absolue pour les fichiers utilisé par la methode (help)					---
-/** ---			- Ajouter un boolean de sortie pour permet des tests de succes lors de l'utilisation de la classe			---
-/** ---			- Initialisation de $_vars et $_blocks_vars pour prevenir des erreurs dans la fonction foreach				---
-/** ---			- Correction de la methode __construct qui n'utilisait pas $_REQUEST[PHPSESSID]									---
-/** ---			- Correction de la méthode remove_temporary_directory qui ne pouvait supprimer le dossier						---
-/** ---			- Ajout de la méthode help																											---
-/** ---			- Amélioration de show_warnings																									---
-/** ---																																						---
-/** ---		VERSION 2.2 : 30.10.2014																												---
-/** ---		---------------------------																											---
-/** ---			- Specification de l'encodage d'écriture du rendu (encode, decode, none(default)) {facultatif}				---
-/** ---			- Specification de l'encodage de lecture du rendu (encode, decode, none(default)) {facultatif}				---
-/** ---			- Specification du chemin du dossier temporaire																				---
-/** ---			- Creation de warnings et un afficheur des erreurs rencontrer lors de la génération du rapport				---
-/** ---																																						---
-/** ---		VERSION 2.1 :																																---
-/** ---		-------------																																---
-/** ---			- Suppression des warnings et die des methodes make_ et remove_	 temporary_directory							---
-/** ---																																						---
-/** ---		VERSION 2.0 :																																---
-/** ---		-------------																																---
-/** ---			- Implémentation de l'imbrication des blocs																					---
-/** ---			- Intégration de la fonction externe sendMail																				---
-/** ---																																						---
-/** ---		VERSION 1.0 :																																---
-/** ---		-------------																																---
-/** ---			- Première release																													---
-/** ---																																						---
-/** --- 											-----------------------------------------------------										---
-/** --- 												{ L I S T E      D E S      M E T H O D E S } 											---
-/** --- 											-----------------------------------------------------										---
-/** ---																																						---
-/** ---		GETTERS :																																	---
-/** ---		---------																																	---
-/** ---																																						---
-/** ---			- [Pri] get_if_block_name																											---
-/** ---			- [Pub] get_mail_recipients																										---
-/** ---			- [Pub] get_mail_sender																												---
-/** ---			- [Pub] get_mail_sender_name																										---
-/** ---			- [Pub] get_mail_subject																											---
-/** ---			- [Pub] get_output_directories																									---
-/** ---			- [Pub] get_output_name																												---
-/** ---			- [Pub] get_render_content																											---
-/** ---			- [Pri] get_input_param																												---
-/** ---			- [Pub] get_template_file																											---
-/** ---			- [Pri] get_template_file_name																									---
-/** ---			- [Pub] get_template_text																											---
-/** ---			- [Pub] get_vars																														---
-/** ---			- [Pub] get_vars_delim																												---
-/** ---																																						---
-/** ---		SETTERS :																																	---
-/** ---		---------																																	---
-/** ---																																						---
-/** ---			- [Pub] set_keep_temp_file																											---
-/** ---			- [Pub] set_mail_recipients																										---
-/** ---			- [Pub] set_mail_sender																												---
-/** ---			- [Pub] set_mail_sender_name																										---
-/** ---			- [Pub] set_mail_subject																											---
-/** ---			- [Pub] set_output_directories																									---
-/** ---			- [Pub] set_output_name																												---
-/** ---			- [Pub] set_render_type																												---
-/** ---			- [Pub] set_template_file																											---
-/** ---			- [Pub] set_template_tags																											---
-/** ---			- [Pub] set_template_text																											---
-/** ---			- [Pub] set_temporary_repository																									---
-/** ---			- [Pri] set_text_as_file																											---
-/** ---			- [Pub] set_utf8_read_treatment																									---
-/** ---			- [Pub] set_utf8_write_treatment																									---
-/** ---			- [Pub] set_var																														---
-/** ---			- [Pub] set_vars																														---
-/** ---			- [Pub] set_vars_delim																												---
-/** ---																																						---
-/** ---		UNSETTERS :																																	---
-/** ---		---------																																	---
-/** ---																																						---
-/** ---			- [Pri] unset_template_file																										---
-/** ---			- [Pri] unset_template_text																										---
-/** ---			- [Pub] unset_vars																													---
-/** ---																																						---
-/** ---		OUTPUTTERS :																																---
-/** ---		------------																																---
-/** ---																																						---
-/** ---			- [Pub] debugPath																														---
-/** ---			- [Pub] display																														---
-/** ---			- [Pub] help																															---
-/** ---			- [Pub] show_historic																												---
-/** ---			- [Sta] throw_error																													---
-/** ---																																						---
-/** ---		WORKERS :																																	---
-/** ---		---------																																	---
-/** ---																																						---
-/** ---			- [Pub] add_history																													---
-/** ---			- [Sta] array_merge_index_recursive																								---
-/** ---			- [Sta] cleanse_js																													---
-/** ---			- [Sta] cleanse_sql																													---
-/** ---			- [Pub] cleansing_render_env																										---
-/** ---			- [Pri] cleansing_render_env_root																								---
-/** ---			- [Pri] close_temporary_render_file																								---
-/** ---			- [Pri] close_template_file																										---
-/** ---			- [Pri] control_buffer																												---
-/** ---			- [Pri] make_render_env																												---
-/** ---			- [Pri] move_file																														---
-/** ---			- [Pri] open_temporary_render_file																								---
-/** ---			- [Pri] open_template_file																											---
-/** ---			- [Pri] path_file_to_name																											---
-/** ---			- [Pri] prepare_buffers																												---
-/** ---			- [Pri] read_block_instruction																									---
-/** ---			- [Pub] remove_folder																												---
-/** ---			- [Pub] render																															---
-/** ---			- [Pri] renderering_block																											---
-/** ---			- [Pri] renderering_if																												---
-/** ---			- [Pri] renderering_php																												---
-/** ---			- [Pri] render_buffer																												---
-/** ---			- [Pub] sendMail																														---
-/** ---			- [Pri] store_buffer																													---
-/** ---			- [Pub] strip_blank																													---
-/** ---			- [Pri] update_temporary_folders_path																							---
-/** ---			- [Pub] update_vars																													---
-/** ---			- [Pub] xor_vars																														---
-/** ---																																						---
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ----------------------------------------------------------------------------------------------------------------------- **
-
-	Si modification des assignations :
-		->
-		=>
-		
-		Alors mettre à jour : 
-			- prepare_buffer
-			- control_buffer
-			- rendering_block
-
-/** -----------------------------------------------------------------------------------------------------------------------
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ---																																						---
-/** ---						I N I T I A L I S A T I O N    D E    L A    S U P E R G L O B A L E   $ _ P H P						---
-/** ---																																						---
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ----------------------------------------------------------------------------------------------------------------------- **/
-$_PHP = Array();
-
+/**
+ * Class Template
+ * @package Template
+ */
 class Template {
-/** -----------------------------------------------------------------------------------------------------------------------
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ---																																						---
-/** --- 															{ C O N S T A N T S } 																---
-/** ---																																						---
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ----------------------------------------------------------------------------------------------------------------------- **/
+    /**
+     * Déclaration des extensions des fichiers selon leur type fonctionnel
+     */
 	const BLOCK_EXT = '.block';
 	const IF_BLOCK_EXT = ".if";
 	const MASTER_EXT = ".master";
 	const PHP_BLOCK_EXT = ".php";
 	const TEMPLATE_EXT = ".itpl";
-	
-	
-/** -----------------------------------------------------------------------------------------------------------------------
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ---																																						---
-/** --- 															{ P R O P E R T I E S } 															---
-/** ---																																						---
-/** -----------------------------------------------------------------------------------------------------------------------
-/** ----------------------------------------------------------------------------------------------------------------------- **/
-	protected $_asbolute_path;							// Chemin absolu vers la classe pour les inclusions de donnée de la classe
-	protected $_buffered_names = Array();			// ARRAY		:: Liste des blocks enregistrés dont la valeur correspond au nom de fichier temporaire
-	protected $_buffered_files_res = Array();		// ARRAY		:: Liste de ressources correspondant au fichier temporaire ouvert pour écriture (buffering)
-	protected $_buffered_flow_records = Array();	// ARRAY		:: Liste de Nom et Type de block en cours de bufferisation au niveau X donnée
-	protected $_buffered_flow_level = -1;			// INTEGER	:: Niveau de bufferisation en cours
-	protected $_debug_mode;								// BOOLEAN	:: Indique si l'execution de la classe est en mode debug - Qui affiche tout les erreurs non bloquante
-	protected $_use_vars_level = -1;					// INTEGER	:: Niveau d'utilisation de variable (pour les imbrications de block)
-	protected $_use_vars_ref = Array();				// ARRAY		:: Référence des variables correspondant au niveau d'utilisation de variable
-	protected $_keep_temp_file = false;				// BOOLEAN	:: Indicateur qui indique si oui ou non on concerve les fichiers temporaire quelque soit le mode de rendu.
-	protected $_mail_recipients;						// STRING	:: Adresse mail des destinataire de la methode "sendMail"
-	protected $_mail_subject;							// STRING	:: Object du mail pour la methode "sendMail"
-	protected $_mail_sender;							// STRING	:: Adresse mail de l'envoyeur du mail pour la methode "sendMail"
-	protected $_mail_sender_name;						// STRING	:: Nom de l'envoyeur du mail pour la methode "sendMail"
-	protected $_output_directories;					// ARRAY		:: Dossiers de sortie pour le rendu (faculatif)
-	protected $_output_file_res;						// RESSOURCE:: Mise en cache du fichier de sortie pour écrire par différente methodes
-	protected $_output_name;							// STRING	:: Nom du fichier de sortie avec l'extension (obligatoire)
-	protected $_remove_folder_secure;				// BOOLEAN	:: Flag anti-boucle infinie en cas de blocage de suppression de fichier pour remove_folder
-	protected $_render_depth_level;					// INTEGER	:: Niveau de profondeur d'execution de la methode render (en cas d'imbrication de template, ertaine action ne doivent pas etre executée )
-	protected $_render_env_exist = false;			// BOOLEAN	:: Flag qui indique que l'environnement de rendu exist. EN cas d'imbrication de template, on ne recréer pas l'env
-	protected $_render_type;							// STRING	:: Flag qui indique le type de rendu attendu (permanent | temporary )
-	protected $_has_rendered;							// BOOLEAN	:: Flag qui indique si la classe à procédé à un rendu {false} - utile pour get_render_content dans le cas render type "permanent"
-	protected $_templates_files_res = Array();	// ARRAY		:: Mise en cache du contenu des fichiers templates pour lecture multiple selon les besoin
-	protected $_template_file = null;				// Chemin complet avec le nom du template (extension comprise) (obligatoire)
-	protected $_template_file_used = false;		// BOOLEAN	:: Indique que la source est un fichier de modèle
-	protected $_template_text = null;				// Text à assimiler comme un template
-	protected $_template_text_used = false;		// BOOLEAN	:: Indique que la source est un texte
-	protected $_temporary_directory;					// Nom du dossier pour la création de dossier temporaire, unique a la session executant la classe
-	protected $_temporary_file_openned = false;	// BOOLEAN	:: Indique si le fichier temporaire dans lequel on génère le rendu est ouvert
-	protected $_temporary_render_file;				// chemin approprié vers le fichier rendu temporaire
-	protected $_temporary_render_file_res;			// Fichier en cache de rendu de travail temporaire
-	protected $_temporary_repository = null;		// Chemin vers le dossier hebergeant les dossiers temporaires avec les fichiers 
-	protected $_temporary_folders_path;				// Chemin complet de dépot des fichiers temporaire (combinaison du chemin vers le dossiers d'accueil et le dossier temporaire de session
-	protected $_utf8_write_treatment;				// Spécifie le méthode de traitement UTF8 d'écriture du rendu(encode, decode, none), default: none
-	protected $_utf8_read_treatment;					// Spécifie le méthode de traitement UTF8 de lecture du rendu(encode, decode, none), default: none
-	protected $_vars;										// ARRAY		:: Ensemble des données servant a la renderisation
-	//protected $_warnings;								// Stockage de tout les erreurs non bloquante enregistrée
-	protected $_historic;								// ARRAY		:: Stockage de tout les erreurs rencontrées
-	protected $_PHP;										// Lien entre la superglobale $_PHP et la classe php Template
-	
-	protected $_start_var_delim;						// Délimiteur d'ouverture de variable évalué pour les patterns
-	protected $_end_var_delim;							// Délimiteur de fermeture de variable évalué pour les patterns
-	protected $_start_var_delim_def;					// Délimiteur d'ouverture de variable défini
-	protected $_end_var_delim_def;					// Délimiteur de fermeture de variable défini
-	
-	protected $_ins_open_tag;							// STRING	:: Balise ouvrante des instructions du moteur Template (Pattern pour RegExp)
-	protected $_ins_close_tag;							// STRING	:: Balise Fermante des instructions du moteur Template (Pattern pour RegExp)
-	protected $_ins_open_tag_def;						// STRING	:: Balise ouvrante des instruction du moteur Template (text pure)
-	protected $_ins_close_tag_def;					// STRING	:: Balise ouvrante des instruction du moteur Template (text pure)
-	
-	
+
+    /**
+     * @var string $_asbolute_path Chemin absolu vers la classe pour les inclusions de donnée de la classe
+     */
+	protected $_asbolute_path;
+
+    /**
+     * @var array $_buffered_names Liste des blocks enregistrés dont la valeur correspond au nom de fichier temporaire
+     */
+	protected $_buffered_names = Array();
+
+    /**
+     * @var array $_buffered_files_res Liste de ressources correspondant au fichier temporaire ouvert pour écriture (buffering)
+     */
+	protected $_buffered_files_res = Array();
+
+    /**
+     * @var array $_buffered_flow_records Liste de Nom et Type de block en cours de bufferisation au niveau X donnée
+     */
+	protected $_buffered_flow_records = Array();
+
+    /**
+     * @var int $_buffered_flow_level Niveau de bufferisation en cours
+     */
+	protected $_buffered_flow_level = -1;
+
+    /**
+     * @var bool $_debug_mode Indique si l'execution de la classe est en mode debug - Qui affiche tout les erreurs non bloquante
+     */
+	protected $_debug_mode;
+
+    /**
+     * @var int $_use_vars_level Niveau d'utilisation de variable (pour les imbrications de block)
+     */
+	protected $_use_vars_level = -1;
+
+    /**
+     * @var array $_use_vars_ref Référence des variables correspondant au niveau d'utilisation de variable
+     */
+	protected $_use_vars_ref = Array();
+
+    /**
+     * @var bool $_keep_temp_file Indicateur qui indique si oui ou non on concerve les fichiers temporaire quelque soit le mode de rendu.
+     */
+	protected $_keep_temp_file = false;
+
+    /**
+     * @var string $_mail_recipients Adresses mail des destinataire de la methode "sendMail"
+     */
+	protected $_mail_recipients;
+
+    /**
+     * @var string $_mail_subject Object du mail pour la methode "sendMail"
+     */
+	protected $_mail_subject;
+
+    /**
+     * @var string $_mail_sender Adresse mail de l'envoyeur du mail pour la methode "sendMail"
+     */
+	protected $_mail_sender;
+
+    /**
+     * @var string $_mail_sender_name Nom de l'envoyeur du mail pour la methode "sendMail"
+     */
+	protected $_mail_sender_name;
+
+    /**
+     * @var array $_output_directories Dossiers de sortie pour le rendu (faculatif)
+     */
+	protected $_output_directories;
+
+    /**
+     * @var resource $_output_file_res Mise en cache du fichier de sortie pour écrire par différente methodes
+     */
+	protected $_output_file_res;
+
+    /**
+     * @var string $_output_name Nom du fichier de sortie avec l'extension (obligatoire)
+     */
+	protected $_output_name;
+
+    /**
+     * @var bool $_remove_folder_secure Flag anti-boucle infinie en cas de blocage de suppression de fichier pour remove_folder
+     */
+	protected $_remove_folder_secure;
+
+    /**
+     * @var int $_render_depth_level Niveau de profondeur d'execution de la methode render (en cas d'imbrication de template, ertaine action ne doivent pas etre executée )
+     */
+	protected $_render_depth_level;
+
+    /**
+     * @var bool $_render_env_exist Flag qui indique que l'environnement de rendu exist. EN cas d'imbrication de template, on ne recréer pas l'env
+     */
+	protected $_render_env_exist = false;
+
+    /**
+     * @var string $_render_type Flag qui indique le type de rendu attendu (permanent | temporary )
+     */
+	protected $_render_type;
+
+    /**
+     * @var bool $_has_rendered Flag qui indique si la classe à procédé à un rendu {false} - utile pour get_render_content dans le cas render type "permanent"
+     */
+	protected $_has_rendered;
+
+    /**
+     * @var array $_templates_files_res Mise en cache du contenu des fichiers templates pour lecture multiple selon les besoin
+     */
+	protected $_templates_files_res = Array();
+
+    /**
+     * @var string $_template_file Chemin complet avec le nom du template (extension comprise) (obligatoire)
+     */
+	protected $_template_file = null;
+
+    /**
+     * @var bool $_template_file_used Indique que la source est un fichier de modèle
+     */
+	protected $_template_file_used = false;
+
+    /**
+     * @var string $_template_text Text à assimiler comme un template
+     */
+	protected $_template_text = null;
+
+    /**
+     * @var bool $_template_text_used Indique que la source est un texte
+     */
+	protected $_template_text_used = false;
+
+    /**
+     * @var string $_temporary_directory Nom du dossier pour la création de dossier temporaire, unique a la session executant la classe
+     */
+	protected $_temporary_directory;
+
+    /**
+     * @var bool $_temporary_file_openned Indique si le fichier temporaire dans lequel on génère le rendu est ouvert
+     */
+	protected $_temporary_file_openned = false;
+
+    /**
+     * @var string $_temporary_render_file chemin approprié vers le fichier rendu temporaire
+     */
+	protected $_temporary_render_file;
+
+    /**
+     * @var resource $_temporary_render_file_res Fichier en cache de rendu de travail temporaire
+     */
+	protected $_temporary_render_file_res;
+
+    /**
+     * @var string $_temporary_repository Chemin vers le dossier hebergeant les dossiers temporaires avec les fichiers
+     */
+	protected $_temporary_repository = null;
+
+    /**
+     * @var string $_temporary_folders_path Chemin complet de dépot des fichiers temporaire (combinaison du chemin vers le dossiers d'accueil et le dossier temporaire de session
+     */
+	protected $_temporary_folders_path;
+
+    /**
+     * @var string $_utf8_write_treatment Spécifie le méthode de traitement UTF8 d'écriture du rendu(encode, decode, none), default: none
+     */
+	protected $_utf8_write_treatment;
+
+    /**
+     * @var string $_utf8_read_treatment Spécifie le méthode de traitement UTF8 de lecture du rendu(encode, decode, none), default: none
+     */
+	protected $_utf8_read_treatment;
+
+    /**
+     * @var array $_vars Ensemble des données servant a la renderisation
+     */
+	protected $_vars;
+
+    /**
+     * @var array $_historic Stockage de tout les erreurs rencontrées
+     */
+	protected $_historic;
+
+    /**
+     * @var array $_PHP Lien entre la superglobale $_PHP et la classe php Template
+     */
+	protected $_PHP;
+    /**
+     * @var string $ Délimiteur d'ouverture de variable évalué pour les patterns
+     */
+	protected $_start_var_delim;
+
+    /**
+     * @var string $_end_var_delim Délimiteur de fermeture de variable évalué pour les patterns
+     */
+	protected $_end_var_delim;
+
+    /**
+     * @var string $_start_var_delim_def Délimiteur d'ouverture de variable défini
+     */
+	protected $_start_var_delim_def;
+
+    /**
+     * @var string $_end_var_delim_def Délimiteur de fermeture de variable défini
+     */
+	protected $_end_var_delim_def;
+
+	/**
+     * @var string $_ins_open_tag Balise ouvrante des instructions du moteur Template (Pattern pour RegExp)
+     */
+	protected $_ins_open_tag;
+
+    /**
+     * @var string $_ins_close_tag Balise Fermante des instructions du moteur Template (Pattern pour RegExp)
+     */
+	protected $_ins_close_tag;
+
+    /**
+     * @var string $_ins_open_tag_def Balise ouvrante des instruction du moteur Template (text pure)
+     */
+	protected $_ins_open_tag_def;
+
+    /**
+     * @var string $_ins_close_tag_def Balise ouvrante des instruction du moteur Template (text pure)
+     */
+	protected $_ins_close_tag_def;
 
 	
 /** -------------------------------------------------------------------------------------------------------------------- 
@@ -622,19 +321,12 @@ class Template {
 		$this->cleansing_render_env(true);
 		$this->cleansing_render_env_root();
 	}
-	
-	
-	
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** ---																																					---
-/** --- 																{ G E T T E R S  }															---
-/** ---																																					---
-/** --------------------------------------------------------------------------------------------------------------------
-/** -------------------------------------------------------------------------------------------------------------------- **/
-	/** ------------------------------------------------------------------------------------------------ **
-	/** --- Méthode d'identification du nom d'un block conditionnel (éviter les répétitions de code) --- **
-	/** ------------------------------------------------------------------------------------------------ **/
+
+    /**
+     * Identifie le nom du block de l'instruction soumise
+     * @param string $instruction
+     * @return mixed
+     */
 	private function get_if_block_name($instruction){
 		/** Vérifier la présence du mot clé AS **/
 		$as_pattern = "#\s+((a|A){1}(s|S){1})\s+#";
@@ -650,54 +342,62 @@ class Template {
 			return $if_name;
 		} else {
 			$this->throw_error(sprintf("Template::get_if_block_name() failed; Keyword 'AS' is missing in this conditionnal instruction : %s", $instruction), E_USER_ERROR);
+			return false;
 		}
-	} // String get_if_block_name(String $instruction)
+	}
 
-	/** --------------------------------------------------------------------------------- **
-	/** --- Renvoie les déstinataires pour l'envoie de mail par la methode "sendMail" --- **
-	/** --------------------------------------------------------------------------------- **/
+    /**
+     * Renvoie les déstinataires pour l'envoie de mail par la methode "sendMail"
+     * @return string
+     */
 	public function get_mail_recipients(){
 		return $this->_mail_recipients;
-	} // String get_mail_recipients()
-	
-	/** ----------------------------------------------------------------------------------- **
-	/** --- Renvoie la valeur défini pour l'originaire du mail de la méthode "sendMail" --- **
-	/** ----------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur défini pour l'originaire du mail de la méthode "sendMail"
+     * @return string
+     */
 	public function get_mail_sender(){
 		return $this->_mail_sender;
-	} // String get_mail_sender()
-	
-	/** ---------------------------------------------------------------------------------- **
-	/** --- Renvoie la valeur du nom de l'originaire du mail par la methode "sendMail" --- **
-	/** ---------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur du nom de l'originaire du mail par la methode "sendMail"
+     * @return string
+     */
 	public function get_mail_sender_name(){
 		return $this->_mail_sender_name;
-	} // String get_mail_sender_name()
-	
-	/** ---------------------------------------------------------------------------------- **
-	/** --- Renvoie la valeur définie pour l'object du mail pour la méthode "sendMail" --- **
-	/** ---------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur définie pour l'object du mail pour la méthode "sendMail"
+     * @return string
+     */
 	public function get_mail_subject(){
 		return $this->_mail_subject;
-	} // String get_mail_subject()
-	
-	/** ------------------------------------------------------------------------- **
-	/** --- Renvoie la valeur définie pour le dossier de sortie pour le rendu --- **
-	/** ------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur définie pour le dossier de sortie pour le rendu
+     * @return array
+     */
 	public function get_output_directories(){
 		return $this->_output_directories;
-	} // Array get_output_directories()
-	
-	/** -------------------------------------------------------------------------------- **
-	/** --- Renvoie la valeur définie pour le nom de fichier de sortie lors du rendu --- **
-	/** -------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur définie pour le nom de fichier de sortie lors du rendu
+     * @return string
+     */
 	public function get_output_name(){
 		return $this->_output_name;
-	} // String get_output_name()
-	
-	/** ---------------------------------------------- **
-	/** --- Retourne le contenu du fichier généreé --- **
-	/** ---------------------------------------------- **/
+	}
+
+    /**
+     * Retourne le contenu du fichier généreé
+     * @return bool|string Boolean on failed; String on success
+     */
 	public function get_render_content(){
 		$render_content = false;
 		
@@ -746,11 +446,13 @@ class Template {
 		}
 		
 		return $render_content;
-	} // Mixed get_render_content() --- Boolean on failed; String on success
-	
-	/** -------------------------------------------------------------------------- **
-	/** --- Renvois la valeur saisie dans la zone dédiée de l'instruction HTML --- **
-	/** -------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvois la valeur saisie dans la zone dédiée de l'instruction HTML
+     * @param string $instruction
+     * @return bool|string
+     */
 	private function get_input_param($instruction){
 		/** Traitement de l'instruction pour obtenir le template et son path **/
 		$start_index = strpos($instruction, '(');
@@ -758,55 +460,54 @@ class Template {
 		$input_param = substr($instruction, ($start_index + 1), ($end_index - $start_index - 1));
 		
 		return $input_param;
-	} // String get_input_param()
-	
-	/** ------------------------------------------------------------- **
-	/** --- Renvoie la valeur définie pour le template à utiliser --- **
-	/** ------------------------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie la valeur définie pour le template à utiliser
+     * @return string
+     */
 	public function get_template_file(){
 		return $this->_template_file;
-	} // String get_template_file()
-	
-	/** --------------------------------------------------- **
-	/** --- Renvois le nom du fichier du modèle demandé --- **
-	/** --------------------------------------------------- **/
+	}
+
+    /**
+     * Renvois le nom du fichier du modèle demandé
+     * @param $template_file
+     * @return mixed
+     */
 	public function get_template_file_name($template_file){
 		return $template_file;
-	} // ????
-	
-	/** ------------------------------------------- **
-	/** --- Renvoie le text défini comme modèle --- **
-	/** ------------------------------------------- **/
+	}
+
+    /**
+     * Renvoie le text défini comme modèle
+     * @return string
+     */
 	public function get_template_text(){
 		return $this->_template_text;
-	} // String get_template_text()
-	
-	/** -------------------------------------------- **
-	/** --- Affiche une vue des variables simple --- **
-	/** -------------------------------------------- **/
+	}
+
+    /**
+     * Affiche une vue des variables simple
+     * @return mixed
+     */
 	public function get_vars(){
 		return print_r($this->_vars);
-	} // String get_vars()
-	
-	/** --------------------------------------------------- **
-	/** --- Affiche une vue du délimiteurs de variables --- **
-	/** --------------------------------------------------- **/
+	}
+
+    /**
+     * Affiche une vue du délimiteurs de variables
+     * @return array
+     */
 	public function get_vars_delim(){
 		return Array('Start Delimiter' => $this->_start_var_delim_def, 'End Delimiter' => $this->_end_var_delim_def);
-	} // Array get_vars_delim()
-	
-	
-	
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** ---																																					---
-/** --- 																{ S E T T E R S  }															---
-/** ---																																					---
-/** --------------------------------------------------------------------------------------------------------------------
-/** -------------------------------------------------------------------------------------------------------------------- **/
-	/** ---------------------------------------------- **
-	/** --- Méthode pour modifier le mode de debug --- **
-	/** ---------------------------------------------- **/
+	}
+
+    /**
+     * Défini le mode de debbuguage
+     * @param $debug_mode
+     * @return bool
+     */
 	public function set_debug_mode($debug_mode){
 		if(is_bool($debug_mode)){
 			$this->_debug_mode = $debug_mode;
@@ -815,11 +516,13 @@ class Template {
 			$this->add_history(sprintf('Template::debug_mode() expects parameter 1 to be boolean, %s given in.', gettype($debug_mode)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_debug_mode(Boolean $debug_mode)
-	
-	/** ----------------------------------------------------------------------------------------------------- **
-	/** --- Methode pour définir le statut de la variable _keep_temp_file (concervation des fichier temp) --- **
-	/** ----------------------------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Sert à définir si l'on concerve les fichiers temporaire du rendu
+     * @param $keep_file
+     * @return bool
+     */
 	public function set_keep_temp_file($keep_file){
 		if(!is_bool($keep_file)){
 			$this->add_history(sprintf('Template::set_keep_temp_file() expects parameter 1 to be boolean, %s given in.', gettype($keep_file)), E_USER_WARNING);
@@ -827,11 +530,13 @@ class Template {
 		$this->_keep_temp_file = $keep_file;
 		
 		return true;
-	} // boolean set_keep_temp_file(Boolean $keep_file)
-	
-	/** -------------------------------------------------------------- **
-	/** --- Définition des destinataire pour la methode "SendMail" --- **
-	/** -------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le ou les destinataires pour l'envois de mail
+     * @param null|string $recipient Autant d'argument string étant des adresses mail.
+     * @return bool
+     */
 	public function set_mail_recipients($recipient=null){
 		/** Initialisation des variables locales **/
 		$recipients = Array();
@@ -861,11 +566,13 @@ class Template {
 		/** Finalisation **/
 		$this->_mail_recipients = $output;
 		return true;
-	} // Boolean set_mail_recipients(String $mail [, String $mail...])
-	
-	/** ----------------------------------------------------------------------- **
-	/** --- Définition de l'adresse de l'envoyer pour la methode "sendMail" --- **
-	/** ----------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini l'adresse mail de l'émetteur du mail
+     * @param $sender
+     * @return bool
+     */
 	public function set_mail_sender($sender){
 		if(is_string($sender)){
 			$this->_mail_sender = $sender;
@@ -874,11 +581,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_mail_sender() expects parameter 1 to be String, %s given in.', gettype($sender)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_mail_sender(String $sender)
-	
-	/** ----------------------------------------------------------------- **
-	/** --- Définition du nom de l'envoyer pour la methode "sendMail" --- **
-	/** ----------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le nom d'affichage de l'émetteur du mail
+     * @param $sender_name
+     * @return bool
+     */
 	public function set_mail_sender_name($sender_name){
 		if(is_string($sender_name)){
 			$this->_mail_sender_name = $sender_name;
@@ -887,11 +596,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_mail_sender_name() expects parameter 1 to be String, %s given in.', gettype($sender_name)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_mail_sender_name(String $sender_name)
-	
-	/** ---------------------------------------------------------------- **
-	/** --- Définition de l'objet du mail pour la methode "sendMail" --- **
-	/** ---------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini l'objet du mail qui sera envoyé
+     * @param $subject
+     * @return bool
+     */
 	public function set_mail_subject($subject){
 		if(is_string($subject)){
 			$this->_mail_subject = $subject;
@@ -900,11 +611,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_mail_subject() expects parameter 1 to be String, %s given in.', gettype($subject)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_mail_subject(String $subject)
-	
-	/** ----------------------------------------------------- **
-	/** --- Définition du dossier de sortie pour le rendu --- **
-	/** ----------------------------------------------------- **/
+	}
+
+    /**
+     * Définie le ou les dossiers de dépôts du document généré
+     * @param string $directory n argument string définissant un dossier de dépôt
+     * @return bool
+     */
 	public function set_output_directories($directory){
 		/** Suppression eventuelle de l'env de rendu **/
 		if($this->_render_env_exist){
@@ -921,11 +634,13 @@ class Template {
 		}
 		
 		return true;
-	} // Boolean set_output_directories(String $directory [,String $directory...])
-	
-	/** ------------------------------------------------------------ **
-	/** --- Définition du nom de fichire de sortie pour le rendu --- **
-	/** ------------------------------------------------------------ **/
+	}
+
+    /**
+     * Défini le nom du fichier qui sera généré et déposé (si mode permanent)
+     * @param string $name
+     * @return bool
+     */
 	public function set_output_name($name){
 		/** Mise à jour des données **/
 		if(is_string($name)){
@@ -935,11 +650,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_output_mail() expects parameter 1 to be String, %s given in.', gettype($name)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_output_name(String $name)
-	
-	/** --------------------------------------------------------------------- **
-	/** --- Définition du type de rendu attendu (temporaire ou permanent) --- **
-	/** --------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le type de rendu du document (Temporaire / Permanent)
+     * @param string $type temporary, permanent
+     * @return bool
+     */
 	public function set_render_type($type){
 		$type = strtolower($type);
 		
@@ -950,11 +667,13 @@ class Template {
 			$this->add_history('Template::set_render_type() failed. A wrong value has been sent. The accepted values are "temporary" or "permanent".', E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_render_type(String $type) --- $type in (temporary, permanent)
-	
-	/** --------------------------------------- **
-	/** --- Définition du modèle à utiliser --- **
-	/** --------------------------------------- **/
+	}
+
+    /**
+     * Défini le modèle source à utiliser
+     * @param $source
+     * @return bool
+     */
 	public function set_template_file($source){
 		/** Vérifie si l'utilisateur n'a pas déjà opté pour le mode "TEXT" **/
 		if(!$this->_template_text_used){
@@ -965,11 +684,13 @@ class Template {
 		$this->_template_file_used = true;
 		
 		return true;
-	} // Boolean set_template_file(String $source)
-	
-	/** ------------------------------------------------------------------------------------ **
-	/** --- Définition des séquence d'ouverture et fermeture d'une instruction du moteur --- **
-	/** ------------------------------------------------------------------------------------ **/
+	}
+
+    /**
+     * Défini les séquence d'ouverture et fermeture d'une instruction du moteur.
+     * @param null|string $open_tag Modèle d'ouverture
+     * @param null|string $close_tag Modèle de fermeture
+     */
 	public function set_template_tags($open_tag=null, $close_tag=null){
 		/** > Sécurisation des arguments **/
 		//--- Tage de fermeture
@@ -990,11 +711,13 @@ class Template {
 		/** > Sauvegarde du modèle défini **/
 		$this->_ins_open_tag_def = $open_tag;
 		$this->_ins_close_tag_def = $close_tag;
-	} // Boolean set_template_tag([ String $open_tag="<!--" [, String $close_tag="-->" ]])
-	
-	/** --------------------------------------- **
-	/** --- Définition d'un text à utiliser --- **
-	/** --------------------------------------- **/
+	}
+
+    /**
+     * Défini le text fournis comme modèle source
+     * @param $text
+     * @return bool
+     */
 	public function set_template_text($text){
 		/** Si un modele au format fichier est déjà défini **/
 		if(!$this->_template_file_used){
@@ -1014,11 +737,13 @@ class Template {
 		$this->set_text_as_file();
 		
 		return true;
-	} // Boolean set_template_text(String $text)
-	
-	/** -------------------------------------------------------------------------- **
-	/** --- Définition du dossier qui doit accueillir les dossiers temporaires --- **
-	/** -------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le dossier de dépôt des fichiers temporaire
+     * @param $tmp_repository
+     * @return bool
+     */
 	public function set_temporary_repository($tmp_repository){
 		/** Suppression eventuelle de l'env de rendu **/
 		if($this->_render_env_exist){
@@ -1035,11 +760,12 @@ class Template {
 		}
 		
 		return true;
-	} // Boolean set_temporary_repository(String $tmp_repository)
-	
-	/** -------------------------------------------------------------------------------------------------- **
-	/** --- Création d'un fichier temporaire en guise de modèle lorsqu'on utilise du text comme source --- **
-	/** -------------------------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Sauvegarde le text qui doit servir de modèle sous forme de fichier
+     * @return bool
+     */
 	private function set_text_as_file(){
 		/** Si l'environnement de rendu n'existe pas, le créer (peut avoir été supprimer suite à un changement de repository (temp/depot)) **/
 		if(!$this->_render_env_exist){
@@ -1057,11 +783,13 @@ class Template {
 		$this->_template_file = $this->_temporary_folders_path.'/temps/text_template.tpl';
 		
 		return true;
-	} // Boolean set_text_as_file(void)
-	
-	/** ---------------------------------------------------------------------- **
-	/** --- Définition du traitement UTF8 des données du fichier de sortie --- **
-	/** ---------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le traitement UTF-8 qui sera appliqué lors de la lecture des fichiers généré
+     * @param string $treatment Traitement UTF-8 : none, encode, decode
+     * @return bool
+     */
 	public function set_utf8_read_treatment($treatment){
 		/** Initialisation des variables locales **/
 		$accept_values = Array('none', 'encode', 'decode');
@@ -1079,11 +807,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_utf8_read_treatment() expects parameter 1 to be String, %s given in.', gettype($treatment)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_utf8_read_treatment(String $treatment)
-	
-	/** ---------------------------------------------------------------------- **
-	/** --- Définition du traitement UTF8 des données du fichier de sortie --- **
-	/** ---------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le traitement UTF-8 qui sera appliqué lors de la génération du document
+     * @param string $treatment Traitement UTF-8 : none, encode, decode
+     * @return bool
+     */
 	public function set_utf8_write_treatment($treatment){
 		/** Initialisation des variables locales **/
 		$accept_values = Array('none', 'encode', 'decode');
@@ -1101,19 +831,24 @@ class Template {
 			$this->add_history(sprintf('Template::set_utf8_write_treatment() expects parameter 1 to be String, %s given in.', gettype($treatment)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_utf8_write_treatment(String $treatment)
-	
-	/** ----------------------------------------------------------------- **
-	/** --- Méthode pour définir ou mettre à jour une variable donnée --- **
-	/** ----------------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini ou met à jour une variable
+     * @param string $var_name
+     * @param mixed $var_value
+     * @return bool
+     */
 	public function set_var($var_name, $var_value){
 		$this->_vars[$var_name] = $var_value;
 		return true;
-	} // Boolean set_var(String $var_name, Mixed $var_value)
-	
-	/** ----------------------------------------------------- **
-	/** --- Définition des variables simple pour le rendu --- **
-	/** ----------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le jeu de donnée à utiliser - Ecrase l'existant
+     * @param array $vars
+     * @return bool
+     */
 	public function set_vars($vars){
 		if(is_array($vars)){
 			$this->_vars = $vars;
@@ -1122,11 +857,13 @@ class Template {
 			$this->add_history(sprintf('Template::set_vars() expects parameter 1 to be Array, %s given in.', gettype($vars)), E_USER_WARNING);
 			return false;
 		}
-	} // Boolean set_vars(Array $vars)
-	
-	/** ------------------------------------------------------- **
-	/** --- Définition du délimiteur indicateur de variable --- **
-	/** ------------------------------------------------------- **/
+	}
+
+    /**
+     * Défini le modèle définissant une variable
+     * @param $delim
+     * @return bool
+     */
 	public function set_vars_delim($delim){
 		/** Définition des délimiteurs ayant un caractère inverse de fermeture **/
 		$has_end_char = Array(
@@ -1172,40 +909,36 @@ class Template {
 		$this->_end_var_delim = $end_delim;
 		
 		return true;
-	} // Boolean set_vars_delim(String $delim)
-	
-	
-	
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** ---																																					---
-/** --- 															{ U N S E T T E R S  }															---
-/** ---																																					---
-/** --------------------------------------------------------------------------------------------------------------------
-/** -------------------------------------------------------------------------------------------------------------------- **/
-	/** -------------------------------------------------- **
-	/** --- Méthode de désallocation du mode "FICHIER" --- **
-	/** -------------------------------------------------- **/
+	}
+
+    /**
+     * Désaloue le flag indiquant l'utilisation d'un modèle provenant d'un fichier
+     * @return bool
+     */
 	public function unset_template_file(){
 		$this->_template_file = null;
 		$this->_template_file_used = false;
 		
 		return true;
-	} // Boolean unset_template_file(Void)
-	
-	/** ----------------------------------------------- **
-	/** --- Méthode de désallocation du mode "TEXT" --- **
-	/** ----------------------------------------------- **/
+	}
+
+    /**
+     * Désalou le flag indiquant l'utilisation d'un modèle provenant du text donnée
+     * @return bool
+     */
 	public function unset_template_text(){
 		$this->_template_text = null;
 		$this->_template_text_used = false;
 		
 		return true;
-	} // Boolean unset_template_text(Void)
-	
-	/** --------------------------------------------- **
-	/** --- Méthode de désallocation de variables --- **
-	/** --------------------------------------------- **/
+	}
+
+    /**
+     * Supprime la variable donnée du jeu
+     * Boolean unset_vars(Mixed $var [,Mixed $var]) --- Mixed = String | Array of String value
+     * @param null|string|array $var N nom de variable ou liste de nom de variable
+     * @return bool
+     */
 	public function unset_vars($var=null){
 		if(!is_null($var)){
 			foreach(func_get_args() as $arg){
@@ -1227,31 +960,23 @@ class Template {
 			$this->throw_error(sprintf('Al least 1 argument (String or Array) must be given.', gettype($var)), E_USER_ERROR);
 			return false;
 		}
-	} // Boolean unset_vars(Mixed $var [,Mixed $var]) --- Mixed = String | Array of String value
+	}
 
-
-	
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** ---																																					---
-/** --- 															{ O U T P U T E R S  } 															---
-/** ---																																					---
-/** --------------------------------------------------------------------------------------------------------------------
-/** -------------------------------------------------------------------------------------------------------------------- **/
-	/** ------------------------------------------------------------------------------------------------------------------ **
-	/** --- Permet d'afficher le voisinage de l'object executant la class lors d'une execution plannifiée par une CRON --- **
-	/** ------------------------------------------------------------------------------------------------------------------ **/
+    /**
+     * Affiche le contenu du dossier executant la classe (permet de se positionner)
+     */
 	public function debugPath(){
 		$currentDir = scandir('./');
 		echo "<pre>";
 		echo "Below, the neighborhood of the current folder where the class is executed : \n\n";
 		print_r($currentDir);
 		echo "</pre>";
-	} // Boolean debugPath(Void)
-	
-	/** -------------------------- **
-	/** --- Affichage du rendu --- **
-	/** -------------------------- **/
+	}
+
+    /**
+     * Affiche à l'écran le fichier rendu
+     * @return bool
+     */
 	public function display(){
 		/** Selon le mode de rendu, on affiche le fichier temporaire, soit on affiche de document final, déposé **/
 		if($this->_render_type == 'temporary'){
@@ -1299,10 +1024,11 @@ class Template {
 		
 		return true;
 	} // Boolean display(Void)
-	
-	/** ------------------------------------------------- **
-	/** --- Affichage de l'aide de la classe Template --- **
-	/** ------------------------------------------------- **/
+
+    /**
+     * Affiche à l'écran le manuel d'aide - Si disponible
+     * @return bool
+     */
 	public function help(){
 		if(file_exists($this->_absolute_path.'/Help/help.php') && file_exists($this->_absolute_path.'/Help/help.tpl')){
 			require $this->_absolute_path.'/Help/help.php';
@@ -1313,12 +1039,12 @@ class Template {
 			$this->throw_error('Template->help() :: The manual seems unavailable. Please check if the help folder and its files are present.', E_USER_ERROR);
 			return false;
 		}
-	} // Boolean help(Void)
-	
-	/** ------------------------------------------ **
-	/** --- Affichage des warnings enregistrée --- **
-	/** ------------------------------------------ **/
-	//public function show_warnings(){
+	}
+
+    /**
+     * Affiche l'historique des erreurs non bloquante rencontrée
+     * @param bool $reverse
+     */
 	public function show_historic($reverse=false){
 		/** Déclaration des variables **/
 		// Correspondance : valeur integer to valeur string (Codes erreurs)
@@ -1385,11 +1111,13 @@ class Template {
 		
 		/** Fin du champ de sortie PRE **/
 		echo "</pre>";
-	} // Void show_historic([Boolean $reverse=false])
-	
-	/** --------------------------------------------------------- **
-	/** --- Méthode de génération d'erreur offcielle pour PHP --- **
-	/** --------------------------------------------------------- **/
+	}
+
+    /**
+     * Emet une erreur PHP utilisateur
+     * @param string $message
+     * @param int $error_level
+     */
 	static function throw_error($message='', $error_level=E_USER_NOTICE){
 		/** Taille manixmal des sorties : 1024 bit **/
 		$traces = debug_backtrace();
@@ -1422,20 +1150,14 @@ class Template {
 		
 		trigger_error("<b>MESSAGE ::</b>\n • ERROR ::</b> <b style='color: red;'>$message</b>", $error_level);
 		echo "</pre>";
-	} // Void throw_error([String $message='' [, Integer $error_level=E_USER_NOTICE]])
-	
-	
-	
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** -------------------------------------------------------------------------------------------------------------------- 
-/** ---																																					---
-/** --- 															{ W O R K E R S } 																---
-/** ---																																					---
-/** --------------------------------------------------------------------------------------------------------------------
-/** -------------------------------------------------------------------------------------------------------------------- **/
-	/** ----------------------------------------------------------------------------------------- **
-	/** --- Méthode d'insertion d'erreur dans l'historique qui peut être affiché par la suite --- **
-	/** ----------------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Ajoute dans l'historique l'erreur soumise
+     * @param $message
+     * @param $err_level
+     * @param bool $debug_backtrace_provide_object
+     */
 	public function add_history($message, $err_level, $debug_backtrace_provide_object=false){
 		$record_time = time();
 		
@@ -1449,11 +1171,12 @@ class Template {
 		);
 		
 		if($this->_debug_mode) self::throw_error($message, $err_level);
-	} // Void add_history(String $message, Integer $err_level [, Boolean $debug_backtrace_provide_object=false])
-	
-	/** -------------------------------------------------------------------------- **
-	/** --- Méthode de fusion de tableau sans tenir compte des index numérique --- **
-	/** -------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Fusionne les tableaux données sans tenir comptes des indexs numérique
+     * @return array|bool
+     */
 	static function array_merge_index_recursive(){
 		/** Controler les arguments **/
 		if(func_num_args() < 2){
@@ -1516,11 +1239,14 @@ class Template {
 		
 		/** Renvois tu tableau fusionné **/
 		return key_to_index($output_array);
-	} // Array array_merge_index_recursive(Void)
-	
-	/** --------------------------------------------------------------------------- **
-	/** --- Méthode de nettoyage des commentaires du language JavaScript & JSON --- **
-	/** --------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Supprime les commentaires du texte donné selon la syntaxe JavaScript
+     * @param $text
+     * @param bool $strip_blank
+     * @return mixed
+     */
 	static function cleanse_js($text, $strip_blank=false){
 		/** Supprimer les commentaires inline **/
 		$text = preg_replace("#\/\/.*#m", "", $text);
@@ -1532,11 +1258,14 @@ class Template {
 		$text = preg_replace("#&nbdel;\s*\n?#m", "", $text);
 		
 		return ($strip_blank) ? Template::strip_blank($text) : $text;
-	} // String cleanse_js(String $text [, Boolean $strip_blank=false])
-	
-	/** ------------------------------------------------------------- **
-	/** --- Méthode de nettoyage des commentaires du language SQL --- **
-	/** ------------------------------------------------------------- **/
+	}
+
+    /**
+     * Supprime les commentaires du texte donné selon la syntaxe SQL
+     * @param $text
+     * @param bool $strip_blank
+     * @return mixed
+     */
 	static function cleanse_sql($text, $strip_blank=false){
 		/** Supprimer les commentaires SQL inline **/
 		$text = preg_replace("#(?<!<\!)--\s.*#m", "&nbdel;", $text); // Negative lookbehind = On dit "ne capture que les (--\s.*) qui ne sont pas précédés de (<\!)".
@@ -1548,11 +1277,12 @@ class Template {
 		$text = preg_replace("#&nbdel;\s*\n?#m", "", $text);
 		
 		return ($strip_blank) ? Template::strip_blank($text) : $text;
-	} // String cleanse_sql(String $text [, Boolean $strip_blank=false])
-	
-	/** --------------------------------------------------------- **
-	/** --- Fonction de nettoyage de l'environnement du rendu --- **
-	/** --------------------------------------------------------- **/
+	}
+
+    /**
+     * Supprime l'environnement de travail du moteur
+     * @param bool $force Permet d'ignorer la demande de concervation des fichiers temporaire
+     */
 	public function cleansing_render_env($force=false){
 		if(!$this->_keep_temp_file OR $force){
 			//$this->remove_folder($this->_temporary_folders_path.'/buffers'); // a delete si recurisve
@@ -1562,11 +1292,12 @@ class Template {
 		}
 		
 		$this->_render_env_exist = false;
-	} // Void cleansing_render_env([Boolean $force=false])
-	
-	/** ------------------------------------------------------------------------------ **
-	/** --- Fonction de nettoyage de l'environnement du rendu - Mode DOCUMENT_ROOT --- **
-	/** ------------------------------------------------------------------------------ **/
+	}
+
+    /**
+     * Supprime l'environnement de travail du moteur (Mode DOCUMENT_ROOT)
+     * @param bool $force Permet d'ignorer la demande de concervation des fichiers temporaire
+     */
 	private function cleansing_render_env_root($force=false){
 		if(!$this->_keep_temp_file OR $force){
 			/** SEARCH FOR REAL PATH **/
@@ -1595,11 +1326,11 @@ class Template {
 		}
 		
 		$this->_render_env_exist = false;
-	} // Void cleansing_render_env_root([Boolean $force=false])
-	
-	/** ---------------------------------------------------------------------- **
-	/** --- Fermeture et purge du cache du template utiliser lors du rendu --- **
-	/** ---------------------------------------------------------------------- **/
+	}
+    /**
+     * Ferme et purge du cache du fichier modèlé utilisé lors du rendu
+     * @param $template_file
+     */
 	private function close_template_file($template_file){
 		if(gettype($this->_templates_files_res[$template_file]) == 'resource'){
 			fclose($this->_templates_files_res[$template_file]);
@@ -1607,11 +1338,12 @@ class Template {
 		} else {
 			$this->throw_error(sprintf('Template->close_template_file() failed; The template "%s" is not opened.', $template_file), E_USER_ERROR);
 		}
-	} // Void close_template_file(String $template_file)
-	
-	/** ---------------------------------------------------------------------- **
-	/** --- Fermeture du fichier dans lequel se trouve le rendu temporaire --- **
-	/** ---------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Ferme le fichier temporaire de rendu
+     * @return bool
+     */
 	private function close_temporary_render_file(){
 		if(gettype($this->_temporary_render_file_res) == 'resource'){
 			fclose($this->_temporary_render_file_res);
@@ -1622,11 +1354,13 @@ class Template {
 		}
 		
 		return true;
-	} // Boolean close_temporary_render_file(Void)
-	
-	/** -------------------------------------------------------- **
-	/** --- Méthode d'évaluation du test du block condionnel --- **
-	/** -------------------------------------------------------- **/
+	}
+
+    /**
+     * Evalue l'expression conditionnel de l'instruction donnée
+     * @param $instruction
+     * @return bool
+     */
 	private function eval_conditions($instruction){
 		/** Récupérer le test **/
 		$start_index = strpos($instruction, '(');
@@ -1652,16 +1386,13 @@ class Template {
 		
 		/** Retourner le test **/
 		return $resultat;
-	} // Boolean eval_conditions(String $instruction)
-	
-	/** ----------------------------------------------------------------------------------- **
-	/** --- Controle le buffer à la recherche d'instruction et déclenche le bon process --- **
-	/**
-	/**	TRUE = Instruction found
-	/**	FALSE = Instuction not found
-	/**
-	/**
-	/** ----------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Recherche les instructions propriétaire et déclenche les processus correspondant
+     * @param $buffer
+     * @return bool
+     */
 	private function control_buffer($buffer){
 		/** DECLARATION DES VARIABLES **/
 			// RETURN VALUE
@@ -1747,11 +1478,10 @@ class Template {
 		}
 		
 		return $return;
-	} // Boolean control_buffer(String $buffer)
-	
-	/** ---------------------------------------------- **
-	/** --- Création de l'environnement de travail --- **
-	/** ---------------------------------------------- **/
+	}
+    /**
+     * Construit l'environnement de travail du moteur
+     */
 	private function make_render_env(){
 		/** Si _temporary_repository est défini, alors y créer l'environnement dedans **/
 		if($this->_temporary_repository != null){
@@ -1782,20 +1512,22 @@ class Template {
 			}
 		}
 		$this->_render_env_exist = true;
-	} // Void make_render_env(Void)
-	
-	/** ------------------------------------------------------------------------------------------------------------ **
-	/** --- Fonction de déplacement du fichier temporaire vers le répository de dépot si render_type = permanent --- **
-	/** ------------------------------------------------------------------------------------------------------------ **/
+	}
+
+    /**
+     * Dépose le fichier rendu vers le ou les dossiers données lorsque le mode est "permanent"
+     */
 	private function move_file(){
 		foreach($this->_output_directories AS $key => $value){
 			@copy($this->_temporary_folders_path.'/renders/'.$this->_output_name, $this->_output_directories[$key].'/'.$this->_output_name);
 		}
-	} // Void move_file(Void)
-	
-	/** -------------------------------------------------------------------- **
-	/** --- Ouverture et mise en cache du contenu du template à utiliser --- **
-	/** -------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Ouvre le modèle et met en cache celui-ci
+     * @param $template_file
+     * @return bool
+     */
 	private function open_template_file($template_file){
 		if(file_exists($template_file)){
 			$this->_templates_files_res[$template_file] = fopen($template_file, 'r');
@@ -1804,11 +1536,12 @@ class Template {
 		}
 		
 		return true;
-	} // Boolean open_template_file(String $template_file)
-	
-	/** ------------------------------------------------------------ **
-	/** --- Création et ouverture du fichier de rendu temporaire --- **
-	/** ------------------------------------------------------------ **/
+	}
+
+    /**
+     * Créer et ouvre le fichier de rendu temporaire
+     * @return bool
+     */
 	private function open_temporary_render_file(){
 		if($this->_output_name != null){
 			if(file_exists($this->_temporary_folders_path.'/renders')){
@@ -1821,25 +1554,21 @@ class Template {
 			$this->throw_error('Template->open_temporary_render_file() failed. The output name is undefined. Use Template->set_output_name($name);', E_USER_ERROR);
 		}
 		return true;
-	} // Boolean open_temporary_render_file(Void)
-	
-	/** ----------------------------------------------------------------------------------------------- **
-	/** --- Convertir le chemin vers un modèle sous une chaine convertie en guise de nom de fichier --- **
-	/** ----------------------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Converti un chemin en nom de fichier
+     * @param $template_file
+     * @return mixed
+     */
 	private function path_file_to_name($template_file){
 		return str_replace("/", ".", $template_file);
-	} // String path_file_to_name(String $template_file)
-	
-	/** ----------------------------------------------------------------------- **
-	/** --- Préparation du rendu. Mise en cache de tout les blocks existant --- **
-	/** ----------------------------------------------------------------------- **
-	/**	Particularité
-	/**		Block_IF
-	/**			- Même buffurisé, il conserve ses balises
-	/**				-> Autoriser la balise de début des Block_IF
-	/**
-	/**
-	/** ----------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Analyse le modèle et créer les différents fichiers pour le rendu
+     * @param $template_file
+     */
 	private function prepare_buffers($template_file){
 		/** INITIALISATION DES VARIABLES **/
 			// NORMALES
@@ -2087,11 +1816,13 @@ class Template {
 		
 		/** FERMETURE DU MASTER UNE FOIS TERMINEE **/
 		fclose($master_buffer);
-	} // Void prepare_buffers(String $template_file)
-	
-	/** ----------------------------------------------------- **
-	/** --- Méthode de lecture des instructions des block --- **
-	/** ----------------------------------------------------- **/
+	}
+
+    /**
+     * Découpe l'instruction block afin d'en retenir les informations utiles
+     * @param $instruction
+     * @return array
+     */
 	private function read_block_instruction($instruction){
 		/**
 			
@@ -2171,11 +1902,13 @@ class Template {
 			'operator' => $operator,
 			'value' => $value
 		);
-	} // Array read_block_instruction(String $instruction)
-	
-	/** ------------------------------------------------- **
-	/** --- Purge et suppression deu dossier spécifié --- **
-	/** ------------------------------------------------- **/
+	}
+
+    /**
+     * Supprime le dossier spécifié
+     * @param $folder_path
+     * @return bool|void
+     */
 	public function remove_folder($folder_path){
 		/** Se positionner sur le dossier **/
 		$ouverture=@opendir($folder_path);
@@ -2208,11 +1941,13 @@ class Template {
 		
 		//if (!$r) return false;
 		return true;
-	} // Boolean remove_folder(String $folder_path)
-	
-	/** --------------------------------------------------------------------- **
-	/** --- Fonction principal de rendu. Prepare le rendu et le déclenche --- **
-	/** --------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Déclenche l'ensemble des procéssus pour généer le document
+     * @param null $template_file
+     * @return $this
+     */
 	public function render($template_file=null){
 		if($this->_start_var_delim !== ''){
 			/** -------------------------------------------------------------------------------- **
@@ -2317,11 +2052,15 @@ class Template {
 		// Il y à bien eu un rendu
 		$this->_has_rendered = true;
 		return $this;
-	} // self render(String $template_file)
-	
-	/** --------------------------------------------------------------------------------------------------- **
-	/** --- Fonction de traitement des blocks pour faire un rendu répétée avec gestion de l'imbrication --- **
-	/** --------------------------------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Génère le contenu final du block donné (répétable)
+     * @param $target
+     * @param $tmp_file
+     * @param null $assign_type
+     * @param null $assign_value
+     */
 	private function rendering_block($target, $tmp_file, $assign_type=null, $assign_value=null){
 		/** Ouvrir la source **/
 		$block_file = fopen($this->_temporary_folders_path."/buffers/$tmp_file",'r');
@@ -2403,11 +2142,12 @@ class Template {
 		
 		/** Lorsque les traitements du block sont terminées, alors on remonte dans le niveau de variable à utiliser **/
 		$this->_use_vars_level--;
-	} // Void rendering_block(String $target, String $tmp_file [, String $assign_type [, String $assign_value]])
-	
-	/** ------------------------------------------------------- **
-	/** --- Fonction de traitements des blocks conditionnel --- **
-	/** ------------------------------------------------------- **/
+	}
+
+    /**
+     * Génère le contneu final du block conditionnel donné
+     * @param $tmp_file
+     */
 	private function rendering_if($tmp_file){
 		/** Déclaration des variables **/
 			// PATTERNS
@@ -2477,11 +2217,12 @@ class Template {
 			}
 		} // END_WHILE
 		
-	} // Void rendering_if(String $tmp_file)
-	
-	/** -------------------------------------------- **
-	/** --- Fonction de traitement des block PHP --- **
-	/** -------------------------------------------- **/
+	}
+    /**
+     * Génère le contneu du block PHP donnée
+     * @param $target
+     * @param $tmp_file
+     */
 	private function rendering_php($target, $tmp_file){
 		/** Ouverture sur $_PHP **/
 		global $_PHP;
@@ -2512,11 +2253,13 @@ class Template {
 		/** Dans un cas possible où l'utilisateur compose une variable qui souhaite remplacer **/
 		/** Finalise par le remplacement des variables existante **/
 		$this->store_buffer($this->render_buffer($evaluated));
-	} // Void rendering_php(String $target, String $tmp_file)
-	
-	/** ---------------------------------------------------------------------------- **
-	/** --- Methode d'évaluation du buffer en vue des remplacements de variables --- **
-	/** ---------------------------------------------------------------------------- **/
+	}
+
+    /**
+     * Procède au remplacement des variables dans l'instruction donnée
+     * @param $buffer
+     * @return mixed
+     */
 	private function render_buffer($buffer){
 		/** Déclaration des patterns de detections **/
 		//$vars_bridged_pattern = '#['.$this->_var_delim.']{2}[a-zA-Z0-9_\-@&\'":\.]+['.$this->_var_delim.']{2}#';
@@ -2566,11 +2309,12 @@ class Template {
 		
 		/** Renvoies la chaine convertie **/
 		return $buffer;
-	} // String render_buffer(String $buffer)
-	
-	/** ------------------------------------------------------------------------------------------------ **
-	/** --- Envoyer le rendu par mail aux destinataire spécifié par la methode "set_mail_recipients" --- **
-	/** ------------------------------------------------------------------------------------------------ **/
+	}
+
+    /**
+     * Envoi le document par mail aux destinataires configuré au préalable
+     * @return bool
+     */
 	public function sendMail(){
 		/** SI LES DESTINATAIRES SONT DEFINIE **/
 		if($this->_mail_recipients != null){
@@ -2628,10 +2372,11 @@ class Template {
 		
 		return true;
 	} // Boolean sendMail(Void)
-	
-	/** --------------------------------------------------------------------------------------------------------------- **
-	/** --- Le rôle de cette méthode est d'enregistrée selon le process défini, le buffer vers le fichier de sortie --- **
-	/** --------------------------------------------------------------------------------------------------------------- **/
+
+    /**
+     * Redirige la ligne analysé vers le fichier qui convient selon sa position dans l'analyse
+     * @param $buffer
+     */
 	private function store_buffer($buffer){
 		/** INSERTION DANS LE FICHIER DE SORTIE **/
 		switch($this->_utf8_write_treatment){
@@ -2645,31 +2390,34 @@ class Template {
 				fputs($this->_temporary_render_file_res, utf8_encode($buffer));
 			break;
 		}
-	} // Void store_buffer(String $buffer)
-	
-	/** ----------------------------------------------------------------------------------- **
-	/** --- Méthode permettant de supprimer les Carriage Return, Line Feed & Tabulation --- **
-	/** ----------------------------------------------------------------------------------- **/
+	}
+    /**
+     * Supprime les caractères d'espacement Carriage Return, Line Feed & Tabulation
+     * @param $text
+     * @return mixed
+     */
 	static function strip_blank($text){
 		$text = str_replace("\t", "", $text);
 		$text = str_replace("\n", "", $text);
 		$text = str_replace("\r", "", $text);
 		
 		return $text;
-	} // String strip_blank(String $text)
-	
-	/** ----------------------------------------------------- **
-	/** --- Formatage du chemin vers le fichier de sortie --- **
-	/** ----------------------------------------------------- **/
+	}
+
+    /**
+     * Met à jour l'emplacement des fichiers temporaires
+     */
 	private function update_temporary_folders_path(){
 		$this->_temporary_folders_path = ($this->_temporary_repository != null) 
 			? $this->_temporary_repository.'/'.$this->_temporary_directory 
 			: $this->_output_directories[0].'/'.$this->_temporary_directory;
-	} // Void update_temporary_folders_path(Void)
-	
-	/** ------------------------------------------------------------------------------------------------ **
-	/** --- Méthode permettant la mise à jour de masse de variable sans redéfinition du jeu existant --- **
-	/** ------------------------------------------------------------------------------------------------ **/
+	}
+
+    /**
+     * Mise à jour du jeu de donnée existant dans qu'il soit écrasé (Update / Add)
+     * @param array $vars
+     * @return bool
+     */
 	public function update_vars($vars){
 		if(is_array($vars)){
 			foreach($vars as $var_name => $var_value){
@@ -2681,11 +2429,13 @@ class Template {
 			$this->throw_error(sprintf('update_vars() expects parameter 1 to be array, %s given in.', gettype($vars)), E_USER_ERROR);
 			return false;
 		}
-	} // Boolean update_vars(Array $var)
-	
-	/** --------------------------------------------------------------------- **
-	/** --- Méthode pour inverser la valeur boolean des variables données --- **
-	/** --------------------------------------------------------------------- **/
+	}
+    /**
+     * Inverse les valeurs boolean des variables données
+     * Boolean unset_vars(Mixed $var [,Mixed $var]) --- Mixed = String | Array of String value
+     * @param null $var
+     * @return bool
+     */
 	public function xor_vars($var=null){
 		if(!is_null($var)){
 			foreach(func_get_args() as $arg){
@@ -2707,7 +2457,6 @@ class Template {
 			$this->throw_error(sprintf('Al least 1 argument (String or Array) must be given.', gettype($var)), E_USER_ERROR);
 			return false;
 		}
-	} // Boolean unset_vars(Mixed $var [,Mixed $var]) --- Mixed = String | Array of String value
+	}
 	
-} // END_CLASS_TEMPLATE
-?>
+}
