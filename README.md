@@ -115,24 +115,24 @@
     * Plusss de fichiers temporaires, mais plus aucun contenu répété
     * Méthodes impactées :	
         * Supprimées :
-            * get_blocks_vars				: Plus de distinction entre variable simple et blocks
-            * get_php_code					: Duplicata de get_template_path
-            * set_blocks_vars				: Plus de distinction entre variable simple et blocks
-            * render_code					: Duplicata de rendering_line, sauf qu'elle faisait un return
+            * get_blocks_vars : Plus de distinction entre variable simple et blocks
+            * get_php_code : Duplicata de get_template_path
+            * set_blocks_vars : Plus de distinction entre variable simple et blocks
+            * render_code : Duplicata de rendering_line, sauf qu'elle faisait un return
         * Ajoutées :
-            * get_template_file_name	: Renvois le modèle défini	par set_template_file()
-            * control_buffer				: Programme d'identification d'instruction et triggerer
-            * path_file_to_name			: Convertir un path (folder/name) en name (folder.name)
-            * rendering_if					: Programme de traitement des blocks IF
-            * rendering_php				: Programme de traitement des blocks PHP
-            * store_buffer					: Ecris dans le fichier final la ligne demandée
+            * get_template_file_name : Renvois le modèle défini	par set_template_file()
+            * control_buffer : Programme d'identification d'instruction et triggerer
+            * path_file_to_name : Convertir un path (folder/name) en name (folder.name)
+            * rendering_if : Programme de traitement des blocks IF
+            * rendering_php : Programme de traitement des blocks PHP
+            * store_buffer : Ecris dans le fichier final la ligne demandée
         * Mise à jour :
-            * prepare_buffer				: Programme de dispath des blocks en fichier temporaire
-            * render							: Programme de renderisation du document
-            * rendering_block				: Programme de traitement des blocks normaux
+            * prepare_buffer : Programme de dispath des blocks en fichier temporaire
+            * render : Programme de renderisation du document
+            * rendering_block : Programme de traitement des blocks normaux
         * Mise à jour & Renommées :
             * get_template_path	==> get_input_param	: Lit les valeurs entre parenthèses dans les instruct°
-            * rendering_line 		==> render_buffer		: Renvois le buffer renderisé, mais n'ecrit plus
+            * rendering_line ==> render_buffer : Renvois le buffer renderisé, mais n'ecrit plus
 * Implémentation de l'instruction de déclaration de block	(BEGIN_DECLARE)
 * Implémentation de l'instruction d'appel d'un block déclaré	(USE)
     * Implémentation de l'instruction de déclaration de block	(BEGIN_DECLARE)
@@ -141,13 +141,13 @@
     * Nouvelles Instructions :
         * Private :
         * Public :
-            * <!-- IF (cdn) AS NAME -->
-            * <!-- ELSEIF (cdn) -->
-            * <!-- ELSE -->
-            * <!-- ENDIF NAME -->
-            * <!-- USE (nom_block_previously_declare_or_used) -->
-            * <!-- BEGIN_DECLARE (BLOCK|PHP|IF->(%DNC%)) AS NAME -->
-            * <!-- END_DECLARE NAME -->
+            * &lt;!-- IF (cdn) AS NAME -->
+            * &lt;!-- ELSEIF (cdn) -->
+            * &lt;!-- ELSE -->
+            * &lt;!-- ENDIF NAME -->
+            * &lt;!-- USE (nom_block_previously_declare_or_used) -->
+            * &lt;!-- BEGIN_DECLARE (BLOCK|PHP|IF->(%DNC%)) AS NAME -->
+            * &lt;!-- END_DECLARE NAME -->
 
 
 ### Version 2.9.0 : 07.11.2015
