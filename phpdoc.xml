@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Paths are relative from current working directory (CWD) where phpdoc is executed -->
 <phpdoc>
-    <title>Documentation Title</title>
+    <title>Template v3.6.0 Documentation</title>
 
     <parser>
-        <target>./docs/cache</target>
+        <target>./pdocs/cache</target>
 
         <!-- Read files with theses extensions -->
         <extensions>
@@ -13,7 +13,7 @@
     </parser>
 
     <transformer>
-        <target>./docs</target>
+        <target>./pdocs</target>
     </transformer>
 
     <files>
