@@ -4,11 +4,13 @@
     "type": "library",
     "keywords": ["Template", "PHP"],
     "licence": "GLP-3.0",
-    "authors": {
-        "name": "Nicolas DUPRE",
-        "email": "neo-blaster@hotmail.fr",
-        "role": "Developer"
-    },
+    "authors": [
+        {
+            "name": "Nicolas DUPRE",
+            "email": "neo-blaster@hotmail.fr",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "php": ">=5.6"
     }
