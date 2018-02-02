@@ -1,5 +1,5 @@
 {
-    "name": "neooblaster/Template",
+    "name": "neooblaster/template",
     "description": "A PHP Template engine based on Smarty syntax.",
     "type": "library",
     "keywords": ["Template", "PHP"],
