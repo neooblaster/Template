@@ -2,11 +2,11 @@
 /**
  * Fichier :: Template.php
  *
- * %DESC BLOCK%
+ * Moteur de renderisation de document text sous la syntaxe Smarty.
  *
  * @author    Nicolas DUPRE
  * @release   24/08/2017
- * @version   3.6.0
+ * @version   3.6.1
  * @package   Template
  *
  * @TODO : Permettre d'assigner un ou plusieurs jeu de donnée à un block
@@ -1194,7 +1194,7 @@ class Template {
 		
 		/** Déclaration des functions de traitement récursive **/
 		/** #1. Transcription des clé numérique en clé normal permettant la fusion **/
-		if(!function_exists('index_to_key')){
+		if(!function_exists('Template\index_to_key')){
 			function index_to_key($array){
 				$convert_array = Array();
 				
@@ -1211,7 +1211,7 @@ class Template {
 		}
 		
 		/** #2. Restauration des clé convertie en clé numérique **/
-		if(!function_exists('key_to_index')){
+		if(!function_exists('Template\key_to_index')){
 			function key_to_index($array){
 				$convert_array = Array();
 				

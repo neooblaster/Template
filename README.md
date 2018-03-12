@@ -1672,8 +1672,8 @@ le manuel s'insérera dans le contenu là où vous avez executé l'appel.
 
 Si vous souhaitez un manuel encore plus détaillé et que vous disposez de l'outil
 ``phpDocumentor`` vous pouvez générer une documentation de manière automatique.
-Pour cela il faudra télécharger le projet complet puis tapez la commande ``phpdocs``
-lorsque vous êtes possitionné à la racine du projet.
+Pour cela il faudra télécharger le projet complet puis tapez la commande ``phpdoc``
+lorsque vous êtes positionné à la racine du projet.
 
 
 
