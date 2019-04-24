@@ -6,7 +6,7 @@
  *
  * @author    Nicolas DUPRE
  * @release   24/08/2017
- * @version   3.6.1
+ * @version   4.0.0
  * @package   Template
  *
  * @TODO : Permettre d'assigner un ou plusieurs jeu de donnée à un block

@@ -10,7 +10,7 @@
 ## Changes By Version
 
 
-### Version 3.6.1 : 13.03.2018
+### Version 4.0.0 : 13.03.2018
 
 * Move ``Template.class`` into folder `Template` for composer autoloading PSR-0.
 * Fix internal function declaration which generate error due to missing namespace.
