@@ -10,6 +10,11 @@
 ## Changes By Version
 
 
+### Version 4.0.1 : 29.12.2020
+
+* Force patch version for Packagist we have the wrong commit for v4.0.0.
+
+
 ### Version 4.0.0 : 13.03.2018
 
 * Move ``Template.class`` into folder `Template` for composer autoloading PSR-0.

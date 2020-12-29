@@ -6,7 +6,7 @@
  *
  * @author    Nicolas DUPRE
  * @release   24/08/2017
- * @version   4.0.0
+ * @version   4.0.1
  * @package   Template
  *
  * @TODO : Permettre d'assigner un ou plusieurs jeu de donnée à un block
@@ -1368,7 +1368,7 @@ class Template {
 		$conditions = substr($instruction, ($start_index + 1), ($end_index - $start_index - 1));
 		
 		/** Préparation du test **/
-		$resultat;
+		$resultat = null;
 		$test = 'if('.$conditions.'){$resultat=true;}else{$resultat=false;}';
 		
 		/** Effectuer le test sous temporisation des sorties **/
@@ -1601,9 +1601,9 @@ class Template {
 			/** -------------------------------------------------------------------------------- **/
 			/** Selon le type de block, l'extension et le type change **/
 			$block_detected = false;
-			$block_extension;
-			$block_type;
-			$block_name;
+			$block_extension = null;
+			$block_type = null;
+			$block_name = null;
 			$block_ins_operator = null;
 			$block_ins_value = null;
 			$block_data = null;
